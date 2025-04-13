@@ -70,6 +70,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/uploads', express.static('uploads'));
 
 // 404 handler
 app.use((req, res, next) => {

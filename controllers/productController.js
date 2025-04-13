@@ -1,4 +1,7 @@
 import { query } from '../config/db.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // Get all products with pagination, sorting, and filtering
 export const getAllProducts = async (req, res) => {
@@ -116,40 +119,86 @@ export const getProduct = async (req, res) => {
   }
 };
 
-// Create a new product (admin only)
-export const createProduct = async (req, res) => {
-  try {
-    const {
-      name,
-      description,
-      price,
-      original_price,
-      image,
-      category,
-      stock,
-      featured,
-    } = req.body;
-
-    const newProduct = await query(
-      `INSERT INTO products
-      (name, description, price, original_price, image, category, stock, featured)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *`,
-      [name, description, price, original_price, image, category, stock, featured || false]
-    );
-
-    return res.status(201).json({
-      status: 'success',
-      product: newProduct.rows[0],
-    });
-  } catch (error) {
-    console.error('Create product error:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Failed to create product',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+// Configure multer for image upload
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads/';
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
   }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: function (req, file, cb) {
+    const filetypes = /jpeg|jpg|png|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Only image files are allowed!'));
+  }
+}).single('image');
+
+export const createProduct = async (req, res) => {
+  upload(req, res, async function(err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'File upload error',
+        error: err.message
+      });
+    } else if (err) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid file type',
+        error: err.message
+      });
+    }
+
+    try {
+      const {
+        name,
+        description,
+        price,
+        original_price,
+        category,
+        stock,
+        featured,
+      } = req.body;
+
+      const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+      const newProduct = await query(
+        `INSERT INTO products
+        (name, description, price, original_price, image, category, stock, featured)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [name, description, price, original_price, imagePath, category, stock, featured || false]
+      );
+
+      return res.status(201).json({
+        status: 'success',
+        product: newProduct.rows[0],
+      });
+    } catch (error) {
+      console.error('Create product error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Failed to create product',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
 };
 
 // Update a product (admin only)

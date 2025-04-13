@@ -64,10 +64,12 @@ const isPasswordStrong = (password) => {
 // Register user
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, phone, email, address, password } = req.body;
+
+    console.log("field : ",password)
 
     // Validate input
-    if (!name || !email || !password) {
+    if (!name || !phone || !email || !address || !password) {
       return res.status(400).json({
         status: 'error',
         message: 'Please provide all required fields',
@@ -106,8 +108,8 @@ export const register = async (req, res) => {
 
     // Create new user
     const newUser = await query(
-      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
-      [name, email.toLowerCase(), hashedPassword, 'user']
+      'INSERT INTO users (name, phone_number, email, address, password, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, phone_number, email, address, role',
+      [name, phone, email.toLowerCase(), address, hashedPassword, 'admin']
     );
 
     // Generate tokens
