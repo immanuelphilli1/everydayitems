@@ -13,7 +13,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<User>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, phone: number, email: string, address: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuthStatus: () => Promise<void>;
 }
@@ -58,13 +58,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, phone: number, email: string, address: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
       const response = await axios.post(
-        '/api/auth/register',
-        { name, email, password },
+        'http://localhost:3001/api/auth/register',
+        { name, phone, email, address, password },
         { withCredentials: true }
       );
       setUser(response.data.user);

@@ -68,11 +68,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // First, send the local cart to the server
       if (items.length > 0) {
-        await axios.post('/api/cart/sync', { items }, { withCredentials: true });
+        await axios.post('http://localhost:3001/api/cart/sync', { items }, { withCredentials: true });
       }
 
       // Then fetch the latest cart from the server
-      const response = await axios.get('/api/cart', { withCredentials: true });
+      const response = await axios.get('http://localhost:3001/api/cart', { withCredentials: true });
       setItems(response.data.items);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to sync cart');
@@ -103,7 +103,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If user is logged in, sync with server
       if (user) {
-        await axios.post('/api/cart/add', item, { withCredentials: true });
+        await axios.post('http://localhost:3001/api/cart/add', item, { withCredentials: true });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to add item to cart');
@@ -128,7 +128,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If user is logged in, sync with server
       if (user) {
-        await axios.put(`/api/cart/update/${productId}`, { quantity }, { withCredentials: true });
+        await axios.put(`http://localhost:3001/api/cart/update/${productId}`, { quantity }, { withCredentials: true });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update item quantity');
@@ -147,7 +147,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If user is logged in, sync with server
       if (user) {
-        await axios.delete(`/api/cart/remove/${productId}`, { withCredentials: true });
+        await axios.delete(`http://localhost:3001/api/cart/remove/${productId}`, { withCredentials: true });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to remove item from cart');
@@ -165,7 +165,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If user is logged in, sync with server
       if (user) {
-        await axios.delete('/api/cart/clear', { withCredentials: true });
+        await axios.delete('http://localhost:3001/api/cart/clear', { withCredentials: true });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to clear cart');

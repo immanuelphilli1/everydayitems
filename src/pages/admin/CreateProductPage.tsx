@@ -98,6 +98,8 @@ export default function CreateProductPage() {
       formDataToSend.append('stock', formData.stock);
       formDataToSend.append('featured', formData.featured.toString());
 
+      console.log("originalPrice", formData.originalPrice);
+
       const response = await fetch('http://localhost:3001/api/products', {
         method: 'POST',
         credentials: 'include',
