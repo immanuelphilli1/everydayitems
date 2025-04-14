@@ -4,6 +4,7 @@ import { Search, Plus, Edit, Trash2, Eye, ArrowUpDown, Check, X } from 'lucide-r
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Toaster, toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -28,86 +29,7 @@ export default function ProductsManagement() {
   const [categories, setCategories] = useState<string[]>([]);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
 
-  // Mock products data
-  const mockProducts: Product[] = [
-    {
-      id: '1',
-      name: 'Wireless Noise Cancelling Headphones',
-      price: 299.99,
-      originalPrice: 349.99,
-      category: 'Electronics',
-      stock: 50,
-      featured: true,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D'
-    },
-    {
-      id: '2',
-      name: 'Premium Cotton T-Shirt',
-      price: 29.99,
-      category: 'Clothing',
-      stock: 100,
-      featured: false,
-      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHRzaGlydHxlbnwwfHwwfHx8MA%3D%3D'
-    },
-    {
-      id: '3',
-      name: 'Smart Home Security Camera',
-      price: 89.99,
-      originalPrice: 119.99,
-      category: 'Smart Home',
-      stock: 30,
-      featured: true,
-      image: 'https://images.unsplash.com/photo-1565130838609-c3a86655db61?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2FtZXJhfGVufDB8fDB8fHww'
-    },
-    {
-      id: '4',
-      name: 'Organic Skincare Gift Set',
-      price: 49.99,
-      category: 'Beauty',
-      stock: 25,
-      featured: false,
-      image: 'https://images.unsplash.com/photo-1527947030665-8b6c8a586350?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHNraW5jYXJlfGVufDB8fDB8fHww'
-    },
-    {
-      id: '5',
-      name: 'Professional Chef Knife Set',
-      price: 129.99,
-      originalPrice: 159.99,
-      category: 'Kitchen',
-      stock: 15,
-      featured: true,
-      image: 'https://images.unsplash.com/photo-1593618998160-e34014e67546?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGtuaWZlJTIwc2V0fGVufDB8fDB8fHww'
-    },
-    {
-      id: '6',
-      name: 'Fitness Smart Watch',
-      price: 159.99,
-      originalPrice: 199.99,
-      category: 'Electronics',
-      stock: 40,
-      featured: true,
-      image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzR8fHdhdGNofGVufDB8fDB8fHww'
-    },
-    {
-      id: '7',
-      name: 'Ergonomic Office Chair',
-      price: 249.99,
-      category: 'Furniture',
-      stock: 10,
-      featured: false,
-      image: 'https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NzV8fGNoYWlyfGVufDB8fDB8fHww'
-    },
-    {
-      id: '8',
-      name: 'Portable Bluetooth Speaker',
-      price: 69.99,
-      originalPrice: 89.99,
-      category: 'Electronics',
-      stock: 60,
-      featured: true,
-      image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3BlYWtlcnxlbnwwfHwwfHx8MA%3D%3D'
-    }
-  ];
+  
 
   useEffect(() => {
     // Check if user is admin
@@ -116,16 +38,25 @@ export default function ProductsManagement() {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      setProducts(mockProducts);
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/products');
+        const data = await response.json();
+        
+        if (data.products && Array.isArray(data.products)) {
+          const products: Product[] = data.products;
+          setProducts(products);
+          setCategories([...new Set(products.map(product => product.category))]);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Failed to fetch products');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // Extract unique categories
-      const uniqueCategories = [...new Set(mockProducts.map(product => product.category))];
-      setCategories(uniqueCategories);
-
-      setLoading(false);
-    }, 500);
+    fetchProducts();
   }, [user, navigate]);
 
   // Handle sorting
@@ -170,20 +101,56 @@ export default function ProductsManagement() {
     setDeleteConfirmation(productId);
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    // In a real app, this would call an API to delete the product
-    setProducts(products.filter(product => product.id !== productId));
-    setDeleteConfirmation(null);
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/products/${productId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setProducts(products.filter(product => product.id !== productId));
+        toast.success('Product deleted successfully');
+      } else {
+        toast.error('Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Failed to delete product');
+    } finally {
+      setDeleteConfirmation(null);
+    }
   };
 
-  const handleToggleFeatured = (productId: string) => {
-    // In a real app, this would call an API to update the product
-    setProducts(products.map(product => {
-      if (product.id === productId) {
-        return { ...product, featured: !product.featured };
+  const handleToggleFeatured = async (productId: string) => {
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const response = await fetch(`http://localhost:3001/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...product,
+          featured: !product.featured
+        }),
+      });
+
+      if (response.ok) {
+        setProducts(products.map(p => 
+          p.id === productId ? { ...p, featured: !p.featured } : p
+        ));
+        toast.success('Product updated successfully');
+      } else {
+        toast.error('Failed to update product');
       }
-      return product;
-    }));
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error('Failed to update product');
+    }
   };
 
   if (loading) {
@@ -304,7 +271,7 @@ export default function ProductsManagement() {
                 <tr key={product.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <img
-                      src={product.image}
+                      src={`http://localhost:3001${product.image}`}
                       alt={product.name}
                       className="h-12 w-12 object-cover rounded-md"
                     />
@@ -317,9 +284,9 @@ export default function ProductsManagement() {
                     {product.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm font-medium text-slate-900">${product.price.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-slate-900">${product.price}</p>
                     {product.originalPrice && (
-                      <p className="text-xs text-slate-500 line-through">${product.originalPrice.toFixed(2)}</p>
+                      <p className="text-xs text-slate-500 line-through">${product.originalPrice}</p>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -348,44 +315,48 @@ export default function ProductsManagement() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
                       <Link to={`/products/${product.id}`}>
-                        <button className="text-slate-500 hover:text-slate-700 p-1">
-                          <Eye size={16} />
-                        </button>
+                        <Button variant="ghost" size="sm">
+                          <Eye size={16} className="mr-2" />
+                          View
+                        </Button>
                       </Link>
                       <Link to={`/admin/products/edit/${product.id}`}>
-                        <button className="text-blue-500 hover:text-blue-700 p-1">
-                          <Edit size={16} />
-                        </button>
+                        <Button variant="ghost" size="sm">
+                          <Edit size={16} className="mr-2" />
+                          Edit
+                        </Button>
                       </Link>
-                      <button
-                        className="text-red-500 hover:text-red-700 p-1"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDeleteConfirmation(product.id)}
+                        className="text-red-500 hover:text-red-700"
                       >
-                        <Trash2 size={16} />
-                      </button>
+                        <Trash2 size={16} className="mr-2" />
+                        Delete
+                      </Button>
                     </div>
 
-                    {/* Delete confirmation popup */}
+                    {/* Delete confirmation modal */}
                     {deleteConfirmation === product.id && (
-                      <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg border border-slate-200 p-4 z-10">
-                        <p className="text-sm text-slate-600 mb-4">
-                          Are you sure you want to delete <strong>{product.name}</strong>?
-                        </p>
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setDeleteConfirmation(null)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteProduct(product.id)}
-                          >
-                            Delete
-                          </Button>
+                      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div className="bg-white p-6 rounded-lg shadow-lg">
+                          <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+                          <p className="mb-4">Are you sure you want to delete this product?</p>
+                          <div className="flex justify-end space-x-4">
+                            <Button
+                              variant="outline"
+                              onClick={() => setDeleteConfirmation(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -408,6 +379,7 @@ export default function ProductsManagement() {
           Showing {filteredProducts.length} of {products.length} products
         </p>
       </div>
+      <Toaster richColors />
     </div>
   );
 }

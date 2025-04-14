@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaPhone, FaMapMarkerAlt, FaClock, FaFacebook, FaTwitter, FaInstagram, FaTiktok } from 'react-icons/fa';
+import { FaPhone, FaMapMarkerAlt, FaClock, FaTwitter, FaInstagram, FaTiktok } from 'react-icons/fa';
 
 interface ContactForm {
   name: string;
@@ -74,9 +74,6 @@ export default function ContactUs() {
           <div className="mt-8">
             <h3 className="font-semibold mb-4">Follow Us</h3>
             <div className="flex space-x-4">
-              <a target='_blank' href="https://www.facebook.com/everydayitemsltd" className="p-3 bg-[#138db3]/10 rounded-full hover:bg-[#138db3]/20 transition-colors">
-                <span className="text-[#138db3] text-xl"><FaFacebook /></span>
-              </a>
               <a target='_blank' href="https://twitter.com/EverydayItemss_" className="p-3 bg-[#138db3]/10 rounded-full hover:bg-[#138db3]/20 transition-colors">
                 <span className="text-[#138db3] text-xl"><FaTwitter /></span>
               </a>

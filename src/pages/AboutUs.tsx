@@ -1,5 +1,5 @@
 import { MapPin, Phone, Clock, Globe, } from 'lucide-react';
-import { FaInstagram, FaTwitter, FaFacebook } from 'react-icons/fa';
+import { FaInstagram, FaTwitter, FaTiktok } from 'react-icons/fa';
 
 export default function AboutUs() {
   return (
@@ -162,12 +162,12 @@ export default function AboutUs() {
               <FaTwitter size={24} color="#138db3" />
             </a>
             <a
-              href="https://www.facebook.com/everydayitemsltd"
+              href="https://www.tiktok.com/@everydayitemss_"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#138db3]/10 p-3 rounded-full hover:bg-[#138db3]/20 transition-colors"
             >
-              <FaFacebook size={24} color="#138db3" />
+              <FaTiktok size={24} color="#138db3" />
             </a>
           </div>
         </div>

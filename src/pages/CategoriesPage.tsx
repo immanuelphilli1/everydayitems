@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { FaShoppingBag, FaLaptop, FaMobileAlt, FaTshirt, FaHome, FaUtensils, FaGamepad, FaBook, FaShoppingCart, FaSearch, FaTools, FaTv, FaHeadphones } from 'react-icons/fa';
+import { useSearchParams } from 'react-router-dom';
+import { FaSearch } from 'react-icons/fa';
 import ProductCard from '@/components/ProductCard';
 
 interface Category {
   id: string;
   name: string;
-  icon: React.ReactNode;
   description: string;
   image: string;
   productCount: number;
@@ -16,95 +15,61 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  original_price?: number;
   image: string;
-  rating: number;
   category: string;
   description: string;
   stock: number;
+  featured: boolean;
 }
-
-const categories: Category[] = [
-  {
-    id: 'Home Appliances',
-    name: 'Home Appliances',
-    icon: <span className="w-8 h-8"><FaHome /></span>,
-    description: 'Quality home appliances for modern living',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fHRzaGlydHxlbnwwfHwwfHx8MA%3D%3D',
-    productCount: 150
-  },
-  {
-    id: 'Consumer Electronics',
-    name: 'Consumer Electronics',
-    icon: <span className="w-8 h-8"><FaLaptop /></span>,
-    description: 'Latest gadgets and electronic devices',
-    image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    productCount: 120
-  },
-  {
-    id: 'Interior Décor',
-    name: 'Interior Décor',
-    icon: <span className="w-8 h-8"><FaTshirt /></span>,
-    description: 'Stylish home decoration items',
-    image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    productCount: 200
-  },
-  {
-    id: 'Tools & Accessories',
-    name: 'Tools & Accessories',
-    icon: <span className="w-8 h-8"><FaTools /></span>,
-    description: 'Professional tools and accessories',
-    image: 'https://images.unsplash.com/photo-1593618998160-e34014e67546?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGtuaWZlJTIwc2V0fGVufDB8fDB8fHww',
-    productCount: 180
-  },
-  {
-    id: 'Gaming Accessories',
-    name: 'Gaming Accessories',
-    icon: <span className="w-8 h-8"><FaGamepad /></span>,
-    description: 'Premium gaming gear and accessories',
-    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-    productCount: 90
-  },
-  {
-    id: 'Audio & Visual Equipment',
-    name: 'Audio & Visual Equipment',
-    icon: <span className="w-8 h-8"><FaTv /></span>,
-    description: 'High-quality audio and visual equipment',
-    image: 'https://images.unsplash.com/photo-1565130838609-c3a86655db61?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2FtZXJhfGVufDB8fDB8fHww',
-    productCount: 75
-  }
-];
 
 export default function CategoriesPage() {
   const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.get('category'));
+  const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch products from your API
-    const fetchProducts = async () => {
+    const fetchCategoriesAndProducts = async () => {
       try {
-        // For now, using mock data
-        setProducts([
-          {
-            id: '1',
-            name: 'Wireless Headphones Pro',
-            price: 199.99,
-            rating: 4.9,
-            image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-            category: 'Consumer Electronics',
-            description: 'High-quality wireless headphones with noise cancellation and premium sound quality.',
-            stock: 15
-          },
-          // ... rest of the mock products ...
-        ]);
+        setLoading(true);
+        // Fetch all products first
+        const productsResponse = await fetch('http://localhost:3001/api/products');
+        const productsData = await productsResponse.json();
+
+        if (productsData.status === 'success') {
+          setProducts(productsData.products);
+          
+          // Create categories from products
+          const categoryMap = new Map<string, Category>();
+          
+          productsData.products.forEach((product: Product) => {
+            if (!categoryMap.has(product.category)) {
+              categoryMap.set(product.category, {
+                id: product.category,
+                name: product.category,
+                description: `Browse our collection of ${product.category}`,
+                image: product.image, // Using first product image as category image
+                productCount: 0
+              });
+            }
+            const category = categoryMap.get(product.category)!;
+            category.productCount++;
+          });
+
+          setCategories(Array.from(categoryMap.values()));
+        }
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchCategoriesAndProducts();
   }, []);
 
   useEffect(() => {
@@ -125,6 +90,21 @@ export default function CategoriesPage() {
 
     setFilteredProducts(filtered);
   }, [products, selectedCategory, searchQuery]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-24">
+        <div className="animate-pulse">
+          <div className="h-8 bg-slate-200 rounded w-1/4 mb-8"></div>
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-slate-200 h-48 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-24">
@@ -161,7 +141,7 @@ export default function CategoriesPage() {
               >
                 <div className="relative h-32">
                   <img
-                    src={category.image}
+                    src={`http://localhost:3001${category.image}`}
                     alt={category.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -176,18 +156,18 @@ export default function CategoriesPage() {
         </div>
 
         {/* Desktop view - Grid */}
-        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
               className={`group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 ${
-                selectedCategory === category.id ? 'ring-2 ring-[#138db3]' : ''
+                selectedCategory === category.id ? 'ring-4 ring-[#138db3] bg-[#138db3]' : ''
               }`}
             >
               <div className="relative h-48">
                 <img
-                  src={category.image}
+                  src={`http://localhost:3001${category.image}`}
                   alt={category.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -195,7 +175,6 @@ export default function CategoriesPage() {
               </div>
               <div className="absolute top-4 left-4 text-white">
                 <div className="flex items-center space-x-2">
-                  {category.icon}
                   <h3 className="text-xl font-semibold">{category.name}</h3>
                 </div>
               </div>

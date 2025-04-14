@@ -10,9 +10,8 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  originalPrice?: number;
+  original_price?: number;
   image: string;
-  rating: number;
   category: string;
 }
 
@@ -23,8 +22,8 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const [isHovered, setIsHovered] = useState(false);
-  const discountPercentage = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  const discountPercentage = product.original_price
+    ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
     : 0;
 
   const handleAddToCart = () => {
@@ -44,7 +43,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative pt-4 px-4">
-        {product.originalPrice && (
+        {product.original_price && (
           <span className="absolute top-6 left-6 bg-red-500 text-white text-xs font-medium px-2 py-1 rounded z-10">
             -{discountPercentage}%
           </span>
@@ -57,7 +56,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </button>
         <Link to={`/products/${product.id}`} className="block relative overflow-hidden aspect-square rounded-md">
           <img
-            src={product.image}
+            src={`http://localhost:3001${product.image}`}
             alt={product.name}
             className={`object-cover w-full h-full transform transition-transform duration-500 ${isHovered ? 'scale-110' : 'scale-100'}`}
           />
@@ -66,8 +65,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       <CardContent className="p-4 flex-grow flex flex-col justify-between">
         <div>
-          <Link
-            to={`/categories/${product.category}`}
+        <Link to={`/categories?category=${encodeURIComponent(product.category)}`}
             className="text-xs text-[#138db3] hover:underline mb-1 inline-block"
           >
             {product.category}
@@ -83,22 +81,22 @@ export default function ProductCard({ product }: ProductCardProps) {
                 key={i}
                 size={14}
                 className={`${
-                  i < Math.round(product.rating)
+                  i < Math.round(5.0)
                     ? 'text-yellow-400 fill-yellow-400'
                     : 'text-slate-300'
                 }`}
               />
             ))}
-            <span className="text-xs text-slate-500 ml-1">({product.rating})</span>
+            <span className="text-xs text-slate-500 ml-1">({5.0})</span>
           </div>
         </div>
 
         <div>
           <div className="flex items-center gap-2 mb-3">
             <span className="font-medium text-slate-900">{formatPrice(product.price)}</span>
-            {product.originalPrice && (
+            {product.original_price && (
               <span className="text-slate-400 text-sm line-through">
-                {formatPrice(product.originalPrice)}
+                {formatPrice(product.original_price)}
               </span>
             )}
           </div>

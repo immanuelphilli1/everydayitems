@@ -63,7 +63,7 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await register(name, phone, email, address, password);
+      await register(name, Number(phone), email, address, password);
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');

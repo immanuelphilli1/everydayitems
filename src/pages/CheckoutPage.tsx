@@ -132,7 +132,7 @@ const OrderSummary = ({ items, totalPrice }: {
           {items.map((item) => (
             <div key={item.id} className="flex items-center py-2 border-b border-slate-200">
               <div className="h-10 w-10 rounded-md overflow-hidden mr-3">
-                <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                <img src={`http://localhost:3001${item.image}`} alt={item.name} className="h-full w-full object-cover" />
               </div>
               <div className="flex-grow">
                 <p className="text-sm font-medium text-slate-900">{item.name}</p>

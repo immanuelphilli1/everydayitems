@@ -24,6 +24,7 @@ import CustomerList from '@/pages/admin/CustomerList';
 import Analytics from '@/pages/admin/Analytics';
 import CustomerDetails from '@/pages/admin/CustomerDetails';
 import OrderDetails from '@/pages/admin/OrderDetails';
+import EditProduct from '@/pages/admin/EditProduct';
 
 export default function AppRoutes() {
   return (
@@ -50,6 +51,7 @@ export default function AppRoutes() {
       {/* Admin routes */}
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/admin/products" element={<ProductsManagement />} />
+      <Route path="/admin/products/edit/:id" element={<EditProduct />} />
       <Route path="/admin/orders" element={<OrdersManagement />} />
       <Route path="/admin/orders/:id" element={<OrderDetails />} />
       <Route path="/admin/products/new" element={<CreateProductPage />} />

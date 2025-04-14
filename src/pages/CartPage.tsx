@@ -89,7 +89,7 @@ export default function CartPage() {
                   <div className="flex flex-col sm:flex-row">
                     <div className="sm:w-24 sm:h-24 mb-4 sm:mb-0 overflow-hidden rounded-md">
                       <img
-                        src={item.image}
+                        src={`http://localhost:3001${item.image}`}
                         alt={item.name}
                         className="w-full h-full object-cover"
                       />
@@ -107,7 +107,7 @@ export default function CartPage() {
                           </p>
                         </div>
                         <div className="mt-2 sm:mt-0 flex sm:flex-col items-center sm:items-end justify-between">
-                          <p className="font-medium">{formatPrice(item.price)}</p>
+                          <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
                           {item.quantity > 1 && (
                             <p className="text-sm text-slate-500 mt-1">
                               {formatPrice(item.price)} each

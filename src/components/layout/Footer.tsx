@@ -1,4 +1,4 @@
-import { FaFacebook, FaTwitter, FaInstagram, FaTiktok } from 'react-icons/fa';
+import { FaTwitter, FaInstagram, FaTiktok } from 'react-icons/fa';
 import { MdEmail, MdPhone } from 'react-icons/md';
 import logo from '@/assets/images/EverydayItems-nogb.png'
 
@@ -17,9 +17,6 @@ export default function Footer() {
               Your one-stop shop for all your shopping needs. Quality products, competitive prices, and exceptional customer service.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.facebook.com/everydayitemsltd" target="_blank" rel="noopener noreferrer" className="text-white hover:text-[#138db3]/80 transition-colors">
-                <FaFacebook size={20} />
-              </a>
               <a href="https://twitter.com/EverydayItemss_" target="_blank" rel="noopener noreferrer" className="text-white hover:text-[#138db3]/80 transition-colors">
                 <FaTwitter size={20} />
               </a>
