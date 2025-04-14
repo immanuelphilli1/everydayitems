@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
@@ -11,6 +12,10 @@ import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize environment variables
 dotenv.config();
@@ -70,7 +75,12 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/uploads', express.static('uploads'));
+// app.use('/uploads', express.static('uploads'));
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*'); // or 'http://localhost:5173'
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'); // <-- this is often required for images
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // 404 handler
 app.use((req, res, next) => {

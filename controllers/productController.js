@@ -203,61 +203,80 @@ export const createProduct = async (req, res) => {
 
 // Update a product (admin only)
 export const updateProduct = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const {
-      name,
-      description,
-      price,
-      original_price,
-      image,
-      category,
-      stock,
-      featured,
-    } = req.body;
-
-    // Check if product exists
-    const existingProduct = await query('SELECT * FROM products WHERE id = $1', [id]);
-    if (existingProduct.rows.length === 0) {
-      return res.status(404).json({
+  upload(req, res, async function(err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({
         status: 'error',
-        message: 'Product not found',
+        message: 'File upload error',
+        error: err.message
+      });
+    } else if (err) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid file type',
+        error: err.message
       });
     }
 
-    // Update product
-    const updatedProduct = await query(
-      `UPDATE products
-      SET name = $1, description = $2, price = $3, original_price = $4,
-          image = $5, category = $6, stock = $7, featured = $8,
-          updated_at = NOW()
-      WHERE id = $9
-      RETURNING *`,
-      [
+    try {
+      const { id } = req.params;
+      const {
         name,
         description,
         price,
         original_price,
-        image,
         category,
         stock,
         featured,
-        id,
-      ]
-    );
+      } = req.body;
 
-    return res.status(200).json({
-      status: 'success',
-      product: updatedProduct.rows[0],
-    });
-  } catch (error) {
-    console.error('Update product error:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Failed to update product',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
+      // Get the existing product
+      const existingProduct = await query(
+        'SELECT * FROM products WHERE id = $1',
+        [id]
+      );
+
+      if (existingProduct.rows.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Product not found'
+        });
+      }
+
+      // Handle image path
+      let imagePath = existingProduct.rows[0].image;
+      
+      // If a new image was uploaded, use its path
+      if (req.file) {
+        imagePath = `/uploads/${req.file.filename}`;
+      } 
+      // If image is provided as a URL in the request body
+      else if (req.body.image && req.body.image.startsWith('http')) {
+        imagePath = req.body.image;
+      }
+
+      const updatedProduct = await query(
+        `UPDATE products
+        SET name = $1, description = $2, price = $3, original_price = $4,
+            image = $5, category = $6, stock = $7, featured = $8
+        WHERE id = $9
+        RETURNING *`,
+        [name, description, price, original_price, imagePath, category, stock, featured || false, id]
+      );
+
+      return res.status(200).json({
+        status: 'success',
+        product: updatedProduct.rows[0]
+      });
+    } catch (error) {
+      console.error('Update product error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Failed to update product',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
 };
 
 // Delete a product (admin only)
@@ -328,3 +347,4 @@ export const getCategories = async (req, res) => {
     });
   }
 };
+
