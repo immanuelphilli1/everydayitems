@@ -176,6 +176,8 @@ export const createProduct = async (req, res) => {
         featured,
       } = req.body;
 
+      console.log("This is the original price :",original_price);
+
       const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
       const newProduct = await query(
