@@ -4,12 +4,12 @@ import { ArrowLeft, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
-import { Toaster, toast } from 'sonner';
+
 interface ProductFormData {
   name: string;
   description: string;
   price: string;
-  original_price: string;
+  originalPrice: string;
   category: string;
   stock: string;
   featured: boolean;
@@ -27,7 +27,7 @@ export default function CreateProductPage() {
     name: '',
     description: '',
     price: '',
-    original_price: '',
+    originalPrice: '',
     category: '',
     stock: '',
     featured: false,
@@ -93,12 +93,10 @@ export default function CreateProductPage() {
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('price', formData.price);
-      formDataToSend.append('original_price', formData.original_price);
+      formDataToSend.append('originalPrice', formData.originalPrice);
       formDataToSend.append('category', formData.category);
       formDataToSend.append('stock', formData.stock);
       formDataToSend.append('featured', formData.featured.toString());
-
-      console.log("originalPrice", formData.original_price);
 
       const response = await fetch('http://localhost:3001/api/products', {
         method: 'POST',
@@ -106,17 +104,11 @@ export default function CreateProductPage() {
         body: formDataToSend,
       });
 
-      if (response.ok) {
-        toast.success('Product created successfully');
-        navigate('/admin/products');
-      } else {
-        toast.error('Failed to create product');
-      }
       if (!response.ok) {
         throw new Error('Failed to create product');
       }
 
-      
+      navigate('/admin/products');
     } catch (err: any) {
       setError(err.message || 'Failed to create product');
     } finally {
@@ -174,12 +166,14 @@ export default function CreateProductPage() {
                 className="w-full h-10 rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#138db3] focus:border-[#138db3]"
               >
                 <option value="">Select a category</option>
-                <option value="Home Appliances">Home Appliances</option>
-                <option value="Customer Electronics">Customer Electronics</option>
-                <option value="Interior Decor">Interior Decor</option>
-                <option value="Tools and Accessories">Tools & Accessories</option>
-                <option value="Gaming Accessories">Gaming Accessories</option>
-                <option value="Audio and Visual Equipment">Audio & Visual Equipment</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Mobile">Mobile</option>
+                <option value="Fashion">Fashion</option>
+                <option value="Home">Home</option>
+                <option value="Kitchen">Kitchen</option>
+                <option value="Gaming">Gaming</option>
+                <option value="Books">Books</option>
+                <option value="Accessories">Accessories</option>
               </select>
             </div>
 
@@ -201,16 +195,16 @@ export default function CreateProductPage() {
             </div>
 
             <div>
-              <label htmlFor="original_price" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="originalPrice" className="block text-sm font-medium text-slate-700 mb-1">
                 Original Price (Optional)
               </label>
               <Input
-                id="original_price"
-                name="original_price"
+                id="originalPrice"
+                name="originalPrice"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.original_price}
+                value={formData.originalPrice}
                 onChange={handleChange}
                 className="focus:ring-[#138db3] focus:border-[#138db3]"
               />
@@ -330,7 +324,6 @@ export default function CreateProductPage() {
           </div>
         </form>
       </div>
-      <Toaster richColors />
     </div>
   );
 } 

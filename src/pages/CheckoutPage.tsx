@@ -226,6 +226,22 @@ const CheckoutContent = () => {
     }
   };
 
+  //*****generate paystack url */
+  const generatePaystackUrl = async (amount: number) => {
+    const formData = new FormData();
+    formData.append('price', amount.toString());
+  
+    const response = await fetch('https://fasthosttech.com/paystack.php', {
+      method: 'POST',
+      body: formData,
+    });
+  
+    const data = await response.json();
+    console.log(data);
+    return data;
+    
+  };
+
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessing(true);
@@ -235,14 +251,19 @@ const CheckoutContent = () => {
       // 1. Create a payment intent on the server
       // 2. Call stripe.confirmCardPayment with the client secret
       // 3. Handle the result
+      const paystackUrl = await generatePaystackUrl(1);
+      console.log(paystackUrl);
 
       // For now, simulate successful payment
+      console.log('Payment successful');
       setTimeout(() => {
         // Generate a mock order ID
         const mockOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         setOrderId(mockOrderId);
-        setOrderComplete(true);
-        clearCart();
+
+        window.location.href = paystackUrl.data.authorization_url;
+        // setOrderComplete(true);
+        // clearCart();
       }, 2000);
     } catch (error) {
       console.error('Payment error:', error);
