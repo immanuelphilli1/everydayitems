@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, formatPriceWithoutCurrency } from '@/lib/utils';
 
 
 // Address form component
@@ -86,16 +86,10 @@ const PaymentForm = ({ processing, handleSubmit }: {
   processing: boolean;
   handleSubmit: (e: React.FormEvent) => Promise<void>;
 }) => {
-
-  
-
   return (
     <form onSubmit={handleSubmit}>
       <div className="border border-slate-200 rounded-md p-4 mb-4">
         <h3 className="text-md font-medium mb-4">Payment Information</h3>
-        
-
-
         <div className="text-xs text-slate-500 mt-2">
           Your payment information is encrypted and secure.
         </div>
@@ -195,6 +189,7 @@ const CheckoutContent = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("items : ",items);
     // If cart is empty, redirect to cart page
     if (items.length === 0) {
       navigate('/cart');
@@ -207,7 +202,7 @@ const CheckoutContent = () => {
       setAddress(prev => ({
         ...prev,
         firstName: user.name.split(' ')[0] || '',
-        lastName: user.name.split(' ').slice(1).join(' ') || '',
+        lastName: user.name.split(' ').slice(1).join(' ') || ''
       }));
     }
   }, [items, navigate, user]);
@@ -242,29 +237,80 @@ const CheckoutContent = () => {
     
   };
 
+  //******create order in the order table */
+  const createOrder = async (orderData: any) => {
+    console.log("orderData : ",orderData);
+    try {
+      const response = await fetch('http://localhost:3001/api/orders', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const data = await response.json();
+      console.log(data);
+
+      setProcessing(false);
+      return data;
+
+    } catch (err: any) {
+      console.log(err.message || 'Failed to create order');
+    } finally {
+      setProcessing(false);
+    } 
+  }
+
+  //****handle payment and insert into the orders table */
   const handlePaymentSubmit = async (e: React.FormEvent) => {
+    console.log(formatPriceWithoutCurrency(totalPrice));
     e.preventDefault();
     setProcessing(true);
 
-    try {
-      // In a real app, we would:
-      // 1. Create a payment intent on the server
-      // 2. Call stripe.confirmCardPayment with the client secret
-      // 3. Handle the result
-      const paystackUrl = await generatePaystackUrl(1);
-      console.log(paystackUrl);
+    //*****the order data */
+    const orderData = {
+      shippingAddress: address,
+      paymentMethod: 'paystack',
+      items: items,
+      totalPrice: totalPrice,
+      shippingPrice: 0,
+      taxPrice: 0,
+    }
 
+    try {
+      //******create order in the order table */
+      const create_order = createOrder(orderData);
+      const orderResult = await create_order;
+      console.log("orderResult : ",orderResult.status);
+      if(orderResult.status !== "success") {
+        throw new Error('Failed to create order');
+      }
+
+      //******generate paystack url */
+      const pay_stack_url = await generatePaystackUrl(totalPrice);
+      if (pay_stack_url.status !== true) {
+        throw new Error('Failed to generate paystack url');
+      }
       // For now, simulate successful payment
       console.log('Payment successful');
       setTimeout(() => {
         // Generate a mock order ID
         const mockOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        setOrderId(mockOrderId);
+        // setOrderId(mockOrderId);
 
-        window.location.href = paystackUrl.data.authorization_url;
+        console.log('Order ID:', mockOrderId);
+
+        window.location.href = pay_stack_url.data.authorization_url;
         // setOrderComplete(true);
         // clearCart();
       }, 2000);
+      setProcessing(false);
     } catch (error) {
       console.error('Payment error:', error);
     } finally {

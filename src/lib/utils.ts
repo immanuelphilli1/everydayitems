@@ -12,6 +12,13 @@ export function formatPrice(price: number) {
   }).format(price);
 }
 
+export function formatPriceWithoutCurrency(price: number): string {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
+}
+
 export function getRandomId() {
   return Math.random().toString(36).substring(2, 9);
 }
