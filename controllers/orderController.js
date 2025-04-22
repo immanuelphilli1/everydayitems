@@ -2,6 +2,7 @@ import { query } from '../config/db.js';
 
 // Create a new order
 export const createOrder = async (req, res) => {
+  console.log("Orders to create : ", req.body)
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -40,7 +41,7 @@ export const createOrder = async (req, res) => {
         `INSERT INTO order_items
          (order_id, product_id, name, quantity, price, image)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [orderId, item.productId, item.name, item.quantity, item.price, item.image]
+        [orderId, item.productId??product_id, item.name, item.quantity, item.price, item.image]
       );
     }
 
