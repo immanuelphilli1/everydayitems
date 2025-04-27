@@ -197,6 +197,8 @@ export const login = async (req, res) => {
         name: user.rows[0].name,
         email: user.rows[0].email,
         role: user.rows[0].role,
+        phone: user.rows[0].phone_number,
+        address: user.rows[0].address,
       },
     });
   } catch (error) {
@@ -311,9 +313,11 @@ export const getMe = async (req, res) => {
 
     // Get fresh user data from database
     const user = await query(
-      'SELECT id, name, email, role FROM users WHERE id = $1',
+      'SELECT id, name, email, role, address, phone_number as phone FROM users WHERE id = $1',
       [req.user.id]
     );
+
+    console.log("user : ",user.rows[0])
 
     if (user.rows.length === 0) {
       return res.status(404).json({
