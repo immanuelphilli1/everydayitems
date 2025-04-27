@@ -80,16 +80,36 @@ export const getUserOrders = async (req, res) => {
 
     const userId = req.user.id;
 
+    // Get orders with their items
     const orders = await query(
-      `SELECT * FROM orders
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT o.*, 
+              json_agg(
+                json_build_object(
+                  'id', oi.id,
+                  'product_id', oi.product_id,
+                  'name', oi.name,
+                  'quantity', oi.quantity,
+                  'price', oi.price,
+                  'image', oi.image
+                )
+              ) as items
+       FROM orders o
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       WHERE o.user_id = $1
+       GROUP BY o.id
+       ORDER BY o.created_at DESC`,
       [userId]
     );
 
+    // Replace null items array with empty array if no items
+    const ordersWithItems = orders.rows.map(order => ({
+      ...order,
+      items: order.items[0] === null ? [] : order.items
+    }));
+
     return res.status(200).json({
       status: 'success',
-      orders: orders.rows,
+      orders: ordersWithItems,
     });
   } catch (error) {
     console.error('Get user orders error:', error);
