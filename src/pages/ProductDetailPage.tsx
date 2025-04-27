@@ -105,6 +105,7 @@ export default function ProductDetailPage() {
     if (product) {
       addItem({
         productId: product.id,
+        status: 'active',
         name: product.name,
         price: product.price,
         quantity,
@@ -230,6 +231,7 @@ export default function ProductDetailPage() {
             </label>
             <div className="flex items-center">
               <button
+                title='Decrease quantity'
                 type="button"
                 className="p-2 border border-slate-300 rounded-l-md bg-slate-50 text-slate-600 hover:bg-slate-100"
                 onClick={() => handleQuantityChange('decrease')}
@@ -241,6 +243,7 @@ export default function ProductDetailPage() {
                 {quantity}
               </div>
               <button
+                title='Increase quantity'
                 type="button"
                 className="p-2 border border-slate-300 rounded-r-md bg-slate-50 text-slate-600 hover:bg-slate-100"
                 onClick={() => handleQuantityChange('increase')}

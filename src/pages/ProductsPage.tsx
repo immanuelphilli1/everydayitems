@@ -130,6 +130,7 @@ export default function ProductsPage() {
             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-md px-3 py-2 cursor-pointer">
               <SlidersHorizontal size={16} className="text-slate-500" />
               <select
+                title='Sort By'
                 className="bg-transparent appearance-none px-4 cursor-pointer focus:outline-none text-sm"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -201,6 +202,7 @@ export default function ProductsPage() {
                 </div>
                 <div className="flex gap-4">
                   <input
+                  title='Minimum Price'
                     type="range"
                     min="0"
                     max="500"
@@ -210,6 +212,7 @@ export default function ProductsPage() {
                     className="w-full"
                   />
                   <input
+                  title='Maximum Price'
                     type="range"
                     min="0"
                     max="500"

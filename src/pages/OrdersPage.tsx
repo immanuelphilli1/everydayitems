@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FaBox, FaTruck, FaCheckCircle, FaClock, FaExclamationCircle } from 'react-icons/fa';
@@ -11,63 +11,66 @@ interface OrderItem {
   image: string;
 }
 
+// interface Order {
+//   id: string;
+//   date: string;
+//   total: number;
+//   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+//   items: OrderItem[];
+//   shippingAddress: string;
+//   trackingNumber?: string;
+// }
+
 interface Order {
   id: string;
-  date: string;
-  total: number;
+  created_at: string;
+  total_price: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   items: OrderItem[];
-  shippingAddress: string;
+  shipping_address: object;
   trackingNumber?: string;
 }
 
+
 // Mock data - replace with API call
-const mockOrders: Order[] = [
-  {
-    id: 'ORD001',
-    date: '2024-03-15',
-    total: 299.99,
-    status: 'delivered',
-    items: [
-      {
-        id: 'ITEM001',
-        name: 'Wireless Headphones',
-        price: 99.99,
-        quantity: 2,
-        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop'
-      },
-      {
-        id: 'ITEM002',
-        name: 'Smart Watch',
-        price: 99.99,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop'
-      }
-    ],
-    shippingAddress: '123 Main St, New York, NY 10001',
-    trackingNumber: '1Z999AA1234567890'
-  },
-  {
-    id: 'ORD002',
-    date: '2024-03-10',
-    total: 149.99,
-    status: 'processing',
-    items: [
-      {
-        id: 'ITEM003',
-        name: 'Bluetooth Speaker',
-        price: 149.99,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1545454675-3531b54301b2?w=500&h=500&fit=crop'
-      }
-    ],
-    shippingAddress: '123 Main St, New York, NY 10001'
-  }
-];
+
 
 export default function OrdersPage() {
+   //******Get orders in the order table */
+   const getOrders = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/orders/my-orders', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const data = await response.json();
+
+      console.log("Orders : ",data);
+      setOrders(data.orders);
+      return data;
+
+    } catch (err: any) {
+      console.log(err.message || 'Failed to create order');
+    } finally {
+      // setProcessing(false);
+    } 
+  }
+
+  useEffect(() => {
+    getOrders();
+  }, []);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'>('all');
 
@@ -75,6 +78,58 @@ export default function OrdersPage() {
     navigate('/login');
     return null;
   }
+
+
+
+ 
+ 
+  console.log("Orders : ",orders);
+
+  // const mockOrders: Order[] = [
+  //   {
+  //     id: 'ORD001',
+  //     created_at: '2024-03-15',
+  //     total_price: 299.99,
+  //     status: 'delivered',
+  //     items: [
+  //       {
+  //         id: 'ITEM001',
+  //         name: 'Wireless Headphones',
+  //         price: 99.99,
+  //         quantity: 2,
+  //         image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop'
+  //       },
+  //       {
+  //         id: 'ITEM002',
+  //         name: 'Smart Watch',
+  //         price: 99.99,
+  //         quantity: 1,
+  //         image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop'
+  //       }
+  //     ],
+  //     shipping_address: '123 Main St, New York, NY 10001',
+  //     trackingNumber: '1Z999AA1234567890'
+  //   },
+  //   {
+  //     id: 'ORD002',
+  //     created_at: '2024-03-10',
+  //     total_price: 149.99,
+  //     status: 'processing',
+  //     items: [
+  //       {
+  //         id: 'ITEM003',
+  //         name: 'Bluetooth Speaker',
+  //         price: 149.99,
+  //         quantity: 1,
+  //         image: 'https://images.unsplash.com/photo-1545454675-3531b54301b2?w=500&h=500&fit=crop'
+  //       }
+  //     ],
+  //     shipping_address: '123 Main St, New York, NY 10001'
+  //   }
+  // ];
+  
+
+  const mockOrders: Order[] = orders;
 
   const filteredOrders = filter === 'all'
     ? mockOrders
@@ -113,6 +168,7 @@ export default function OrdersPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
+  
 
   return (
     <div className="container mx-auto px-4 py-24">
@@ -197,7 +253,7 @@ export default function OrdersPage() {
                       Order #{order.id}
                     </h3>
                     <p className="text-sm text-slate-600">
-                      Placed on {new Date(order.date).toLocaleDateString()}
+                      Placed on {new Date(order.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -213,7 +269,7 @@ export default function OrdersPage() {
                   {order.items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4">
                       <img
-                        src={item.image}
+                        src={`http://localhost:3001${item.image}`}
                         alt={item.name}
                         className="w-16 h-16 object-cover rounded-md"
                       />
@@ -234,7 +290,7 @@ export default function OrdersPage() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-sm text-slate-600">
-                        Shipping to: {order.shippingAddress}
+                        Shipping to: {(order.shipping_address as any).address1}
                       </p>
                       {order.trackingNumber && (
                         <p className="text-sm text-slate-600">
@@ -245,7 +301,7 @@ export default function OrdersPage() {
                     <div className="text-right">
                       <p className="text-sm text-slate-600">Total</p>
                       <p className="text-lg font-semibold text-slate-900">
-                        ${order.total.toFixed(2)}
+                        ${order.total_price}
                       </p>
                     </div>
                   </div>

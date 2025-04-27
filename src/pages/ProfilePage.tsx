@@ -17,7 +17,7 @@ interface Order_ {
   create_at: string;
   total_price: number;
   status: string;
-  items: number;
+  items: [];
 }
 
 interface ProfileData {
@@ -34,7 +34,6 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
-  const { items: cartItems } = useCart();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
@@ -105,7 +104,7 @@ export default function ProfilePage() {
 
 
 
-  console.log("Orders : ",cartItems);
+  console.log("Orders : ",orders_);
 
   const handleLogout = () => {
     logout();
@@ -251,7 +250,7 @@ export default function ProfilePage() {
               </div>
               <div className="text-right">
                 <p className="font-medium text-slate-900">${order.total_price}</p>
-                {/* <p className="text-sm text-slate-600">{order.items} items</p> */}
+                <p className="text-sm text-slate-600">{order.items.length} items</p>
               </div>
             </div>
             <div className="mt-2">
