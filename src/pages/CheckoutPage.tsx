@@ -202,7 +202,9 @@ const CheckoutContent = () => {
       setAddress(prev => ({
         ...prev,
         firstName: user.name.split(' ')[0] || '',
-        lastName: user.name.split(' ').slice(1).join(' ') || ''
+        lastName: user.name.split(' ').slice(1).join(' ') || '',
+        phone: user.phone?.toString() || '',
+        address1: user.address || '',
       }));
     }
   }, [items, navigate, user]);

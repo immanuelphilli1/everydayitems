@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaShoppingBag, FaHeart, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { useCart } from '@/context/CartContext';
 
 interface Order {
   id: string;
   date: string;
   total: number;
+  status: string;
+  items: number;
+}
+
+interface Order_ {
+  id: string;
+  create_at: string;
+  total_price: number;
   status: string;
   items: number;
 }
@@ -25,20 +34,56 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
+  const { items: cartItems } = useCart();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main St, New York, NY 10001',
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone?.toString() || '',
+    address: user?.address || '',
     preferences: {
       emailNotifications: true,
       smsNotifications: false,
       newsletter: true
     }
   });
+
+  const [orders_, setOrders] = useState<Order_[]>([]);
+
+   //******Get orders in the order table */
+   const getOrders = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/orders/my-orders', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const data = await response.json();
+
+      console.log("Orders : ",data);
+      setOrders(data.orders);
+      return data;
+
+    } catch (err: any) {
+      console.log(err.message || 'Failed to create order');
+    } finally {
+      // setProcessing(false);
+    } 
+  }
+
+  useEffect(() => {
+    getOrders();
+  }, []);
 
   // Mock order history data
   const orders: Order[] = [
@@ -57,6 +102,10 @@ export default function ProfilePage() {
       items: 1
     }
   ];
+
+
+
+  console.log("Orders : ",cartItems);
 
   const handleLogout = () => {
     logout();
@@ -102,6 +151,7 @@ export default function ProfilePage() {
           <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
           {isEditing ? (
             <input
+              title='Name'
               type="text"
               value={profileData.name}
               onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
@@ -116,6 +166,7 @@ export default function ProfilePage() {
           <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
           {isEditing ? (
             <input
+              title='Email'
               type="email"
               value={profileData.email}
               onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
@@ -129,7 +180,8 @@ export default function ProfilePage() {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
           {isEditing ? (
-            <input
+            <input  
+              title='Phone'
               type="tel"
               value={profileData.phone}
               onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
@@ -143,7 +195,8 @@ export default function ProfilePage() {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
           {isEditing ? (
-            <textarea
+            <textarea 
+              title='Address'
               value={profileData.address}
               onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
               className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#138db3]"
@@ -161,7 +214,7 @@ export default function ProfilePage() {
     <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
       <h2 className="text-xl font-semibold text-slate-900 mb-6">Order History</h2>
       <div className="space-y-4">
-        {orders.map((order) => (
+        {/* {orders.map((order) => (
           <div
             key={order.id}
             className="border border-slate-200 rounded-lg p-4 hover:border-[#138db3] transition-colors"
@@ -174,6 +227,31 @@ export default function ProfilePage() {
               <div className="text-right">
                 <p className="font-medium text-slate-900">${order.total.toFixed(2)}</p>
                 <p className="text-sm text-slate-600">{order.items} items</p>
+              </div>
+            </div>
+            <div className="mt-2">
+              <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {order.status}
+              </span>
+            </div>
+          </div>
+        ))} */}
+
+  {orders_.map((order) => (
+          <div
+            key={order.id}
+            className="border border-slate-200 rounded-lg p-4 hover:border-[#138db3] transition-colors"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="font-medium text-slate-900">Order #{order.id}</p>
+                <p className="text-sm text-slate-600">{order.create_at}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-medium text-slate-900">${order.total_price}</p>
+                {/* <p className="text-sm text-slate-600">{order.items} items</p> */}
               </div>
             </div>
             <div className="mt-2">
@@ -200,6 +278,7 @@ export default function ProfilePage() {
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
+              title='Email Notifications'
               type="checkbox"
               checked={profileData.preferences.emailNotifications}
               onChange={(e) => setProfileData({
@@ -219,6 +298,7 @@ export default function ProfilePage() {
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
+              title='SMS Notifications'
               type="checkbox"
               checked={profileData.preferences.smsNotifications}
               onChange={(e) => setProfileData({
@@ -238,6 +318,7 @@ export default function ProfilePage() {
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
+              title='Newsletter'
               type="checkbox"
               checked={profileData.preferences.newsletter}
               onChange={(e) => setProfileData({

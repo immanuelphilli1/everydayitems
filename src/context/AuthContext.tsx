@@ -6,6 +6,8 @@ interface User {
   name: string;
   email: string;
   role: 'user' | 'admin';
+  phone: number;
+  address: string;
 }
 
 interface AuthContextType {
@@ -28,7 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/auth/me', { withCredentials: true });
+      const response = await axios.get('http://localhost:3001/api/auth/me', { withCredentials: true });
+
+      console.log('Checking auth status...', response.data);
       setUser(response.data.user);
     } catch (err) {
       setUser(null);
@@ -47,6 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       setError(null);
       const response = await axios.post('http://localhost:3001/api/auth/login', { email, password }, { withCredentials: true });
+
+      console.log(response.data);
       setUser(response.data.user);
 
       return response.data.user;

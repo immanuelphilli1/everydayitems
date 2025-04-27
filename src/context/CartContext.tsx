@@ -9,6 +9,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image: string;
+  status: string;
 }
 
 interface CartContextType {
@@ -73,6 +74,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Then fetch the latest cart from the server
       const response = await axios.get('http://localhost:3001/api/cart', { withCredentials: true });
+      console.log("Cart response : ",response.data);
       setItems(response.data.items);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to sync cart');

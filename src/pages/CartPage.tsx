@@ -118,6 +118,7 @@ export default function CartPage() {
                       <div className="mt-4 flex justify-between items-center">
                         <div className="flex items-center border border-slate-200 rounded-md">
                           <button
+                            title='Decrease quantity'
                             type="button"
                             className="p-2 text-slate-600 hover:text-slate-900"
                             onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
@@ -127,6 +128,7 @@ export default function CartPage() {
                           </button>
                           <span className="px-4 py-2 text-center w-12">{item.quantity}</span>
                           <button
+                            title='Increase quantity'
                             type="button"
                             className="p-2 text-slate-600 hover:text-slate-900"
                             onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
