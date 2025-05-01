@@ -73,6 +73,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'>('all');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
   if (!user) {
     navigate('/login');
@@ -170,6 +172,41 @@ export default function OrdersPage() {
   };
   
 
+  // Handle order deletion
+  const deleteOrder = async (orderId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/orders/${orderId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete order');
+      }
+
+      // Update local state
+      setOrders(orders.filter(order => order.id !== orderId));
+      setShowDeleteModal(false);
+      setOrderToDelete(null);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+    }
+  };
+
+  // Handle payment initiation
+  const handlePayment = (orderId: string) => {
+    navigate(`/checkout?orderId=${orderId}`);
+  };
+
+  // Handle delete confirmation
+  const confirmDelete = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setShowDeleteModal(true);
+  };
+
   return (
     <div className="container mx-auto px-4 py-24">
       <div className="max-w-6xl mx-auto">
@@ -239,6 +276,35 @@ export default function OrdersPage() {
           </button>
         </div>
 
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Delete Order</h3>
+              <p className="text-slate-600 mb-6">
+                Are you sure you want to delete this order? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setOrderToDelete(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => orderToDelete && deleteOrder(orderToDelete)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                >
+                  Delete Order
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Orders List */}
         <div className="space-y-6">
           {filteredOrders.map((order) => (
@@ -303,6 +369,22 @@ export default function OrdersPage() {
                       <p className="text-lg font-semibold text-slate-900">
                         ${order.total_price}
                       </p>
+                      {order.status === 'pending' && (
+                        <div className="flex justify-end space-x-2 mt-2">
+                          <button
+                            onClick={() => handlePayment(order.id)}
+                            className="text-sm bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
+                          >
+                            Make Payment
+                          </button>
+                          <button
+                            onClick={() => confirmDelete(order.id)}
+                            className="text-sm bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
+                          >
+                            Delete Order
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -4,12 +4,14 @@ import { CartProvider } from '@/context/CartContext';
 import AppRoutes from '@/routes';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { Toaster } from 'sonner';
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
+          <Toaster position="top-right" />
           <div className="flex flex-col min-h-screen">
             <Navbar />
             <main className="flex-grow">
