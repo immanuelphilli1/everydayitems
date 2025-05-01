@@ -5,6 +5,7 @@ import {
   getOrderDetails,
   getAllOrders,
   updateOrderStatus,
+  deleteOrder,
 } from '../controllers/orderController.js';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
 
@@ -17,7 +18,7 @@ router.use(protect);
 router.post('/', createOrder);
 router.get('/my-orders', getUserOrders);
 router.get('/:id', getOrderDetails);
-
+router.delete('/:id', deleteOrder);
 
 // Admin routes
 router.get('/', restrictTo('admin'), getAllOrders);

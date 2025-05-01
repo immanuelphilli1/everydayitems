@@ -228,3 +228,47 @@ export const updateOrderStatus = async (req, res) => {
     });
   }
 };
+
+// Delete order
+export const deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Check if order exists and belongs to the user
+    const order = await query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (order.rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Order not found',
+      });
+    }
+
+    // Begin transaction
+    await query('BEGIN');
+
+    // Delete order items first (due to foreign key constraint)
+    await query('DELETE FROM order_items WHERE order_id = $1', [id]);
+
+    // Delete the order
+    await query('DELETE FROM orders WHERE id = $1', [id]);
+
+    // Commit transaction
+    await query('COMMIT');
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Order deleted successfully',
+    });
+  } catch (error) {
+    // Rollback transaction on error
+    await query('ROLLBACK');
+
+    console.error('Delete order error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to delete order',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
