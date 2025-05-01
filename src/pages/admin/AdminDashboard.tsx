@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { BarChart3, Package, Users, CreditCard, DollarSign, Activity, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface DashboardStat {
   title: string;
@@ -20,96 +21,103 @@ interface RecentOrder {
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 }
 
+interface Activity {
+  id: string;
+  type: 'order' | 'user' | 'product';
+  description: string;
+  created_at: string;
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-
-  // Mock stats data
-  const stats: DashboardStat[] = [
-    {
-      title: 'Total Revenue',
-      value: '$12,486.98',
-      change: 14.5,
-      icon: <DollarSign />,
-      color: 'bg-blue-500'
-    },
-    {
-      title: 'Orders',
-      value: 156,
-      change: 5.2,
-      icon: <ShoppingBag />,
-      color: 'bg-amber-500'
-    },
-    {
-      title: 'Customers',
-      value: 842,
-      change: 8.1,
-      icon: <Users />,
-      color: 'bg-emerald-500'
-    },
-    {
-      title: 'Products',
-      value: 235,
-      change: -2.4,
-      icon: <Package />,
-      color: 'bg-purple-500'
-    }
-  ];
-
-  // Mock recent orders
-  const recentOrders: RecentOrder[] = [
-    {
-      id: 'ORD-2023-1021',
-      customer: 'John Doe',
-      date: '2023-12-15',
-      amount: 129.99,
-      status: 'delivered'
-    },
-    {
-      id: 'ORD-2023-1020',
-      customer: 'Jane Smith',
-      date: '2023-12-14',
-      amount: 79.95,
-      status: 'shipped'
-    },
-    {
-      id: 'ORD-2023-1019',
-      customer: 'Robert Johnson',
-      date: '2023-12-14',
-      amount: 249.50,
-      status: 'processing'
-    },
-    {
-      id: 'ORD-2023-1018',
-      customer: 'Lisa Brown',
-      date: '2023-12-13',
-      amount: 59.99,
-      status: 'pending'
-    },
-    {
-      id: 'ORD-2023-1017',
-      customer: 'Michael Wilson',
-      date: '2023-12-12',
-      amount: 199.99,
-      status: 'delivered'
-    }
-  ];
+  const [stats, setStats] = useState<DashboardStat[]>([]);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
-    console.log("user: ", user);
-    // Check if user is admin
     if (!user || user.role !== 'admin') {
       navigate('/login');
       return;
     }
 
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [statsResponse, ordersResponse, activitiesResponse] = await Promise.all([
+          fetch('http://localhost:3001/api/admin/dashboard/stats', {
+            credentials: 'include',
+          }),
+          fetch('http://localhost:3001/api/admin/dashboard/orders/recent', {
+            credentials: 'include',
+          }),
+          fetch('http://localhost:3001/api/admin/dashboard/activities', {
+            credentials: 'include',
+          })
+        ]);
 
-    return () => clearTimeout(timer);
+        if (!statsResponse.ok || !ordersResponse.ok || !activitiesResponse.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+
+        const [statsData, ordersData, activitiesData] = await Promise.all([
+          statsResponse.json(),
+          ordersResponse.json(),
+          activitiesResponse.json()
+        ]);
+
+        console.log('Stats Response:', statsData);
+        console.log('Orders Response:', ordersData);
+
+        // Transform stats data
+        const transformedStats: DashboardStat[] = [
+          {
+            title: 'Total Revenue',
+            value: `$${statsData.data.totalRevenue}`,
+            change: statsData.data.revenueChange,
+            icon: <DollarSign />,
+            color: 'bg-blue-500'
+          },
+          {
+            title: 'Orders',
+            value: statsData.data.totalOrders,
+            change: statsData.data.ordersChange,
+            icon: <ShoppingBag />,
+            color: 'bg-amber-500'
+          },
+          {
+            title: 'Customers',
+            value: statsData.data.totalCustomers,
+            change: statsData.data.customersChange,
+            icon: <Users />,
+            color: 'bg-emerald-500'
+          },
+          {
+            title: 'Products',
+            value: statsData.data.totalProducts,
+            change: statsData.data.productsChange,
+            icon: <Package />,
+            color: 'bg-purple-500'
+          }
+        ];
+
+        setStats(transformedStats);
+        setRecentOrders(ordersData.orders);
+        setRecentActivities(activitiesData.activities);
+      } catch (error: any) {
+        console.error('Error fetching dashboard data:', error);
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack
+        });
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, [user, navigate]);
 
   // Status badge style based on order status
@@ -218,7 +226,7 @@ export default function AdminDashboard() {
                       {order.date}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
-                      ${order.amount.toFixed(2)}
+                      ${order.amount}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStatusBadgeClass(order.status)}`}>
@@ -282,7 +290,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity / Notifications */}
+      {/* Recent Activity */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-8">
         <div className="p-6 border-b border-slate-200 flex justify-between items-center">
           <h2 className="text-lg font-medium text-slate-900">Recent Activity</h2>
@@ -290,46 +298,25 @@ export default function AdminDashboard() {
         </div>
         <div className="p-6">
           <ul className="space-y-4">
-            <li className="flex items-start">
-              <div className="bg-blue-100 p-2 rounded-full text-blue-600 mr-4 mt-1">
-                <Users size={14} />
-              </div>
-              <div>
-                <p className="text-slate-900">New customer registered</p>
-                <p className="text-sm text-slate-500">Emma Thompson created an account</p>
-                <p className="text-xs text-slate-400 mt-1">15 minutes ago</p>
-              </div>
-            </li>
-            <li className="flex items-start">
-              <div className="bg-emerald-100 p-2 rounded-full text-emerald-600 mr-4 mt-1">
-                <ShoppingBag size={14} />
-              </div>
-              <div>
-                <p className="text-slate-900">New order received</p>
-                <p className="text-sm text-slate-500">Order #ORD-2023-1022 from David Clark</p>
-                <p className="text-xs text-slate-400 mt-1">34 minutes ago</p>
-              </div>
-            </li>
-            <li className="flex items-start">
-              <div className="bg-amber-100 p-2 rounded-full text-amber-600 mr-4 mt-1">
-                <Package size={14} />
-              </div>
-              <div>
-                <p className="text-slate-900">Product stock low</p>
-                <p className="text-sm text-slate-500">Wireless Headphones (SKU: WH-1001) is low in stock (3 remaining)</p>
-                <p className="text-xs text-slate-400 mt-1">2 hours ago</p>
-              </div>
-            </li>
-            <li className="flex items-start">
-              <div className="bg-purple-100 p-2 rounded-full text-purple-600 mr-4 mt-1">
-                <CreditCard size={14} />
-              </div>
-              <div>
-                <p className="text-slate-900">Payment received</p>
-                <p className="text-sm text-slate-500">$349.99 payment for order #ORD-2023-1020</p>
-                <p className="text-xs text-slate-400 mt-1">5 hours ago</p>
-              </div>
-            </li>
+            {recentActivities.map((activity) => (
+              <li key={activity.id} className="flex items-start">
+                <div className={`p-2 rounded-full mr-4 mt-1 ${
+                  activity.type === 'order' ? 'bg-emerald-100 text-emerald-600' :
+                  activity.type === 'user' ? 'bg-blue-100 text-blue-600' :
+                  'bg-amber-100 text-amber-600'
+                }`}>
+                  {activity.type === 'order' ? <ShoppingBag size={14} /> :
+                   activity.type === 'user' ? <Users size={14} /> :
+                   <Package size={14} />}
+                </div>
+                <div>
+                  <p className="text-slate-900">{activity.description}</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {new Date(activity.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

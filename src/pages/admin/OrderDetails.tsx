@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface OrderItem {
   id: string;
@@ -30,48 +31,17 @@ interface OrderItem {
 
 interface Order {
   id: string;
-  userId: string;
-  customer: {
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-  };
-  date: string;
-  totalAmount: number;
+  user_id: string;
+  customer_name: string;
+  customer_email: string;
+  created_at: string;
+  total_price: number;
   items: OrderItem[];
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentStatus: 'paid' | 'unpaid' | 'refunded';
-  shippingAddress: string;
-  trackingNumber?: string;
+  payment_status: 'paid' | 'unpaid' | 'refunded';
+  shipping_address: string;
+  tracking_number?: string;
 }
-
-// Mock data - replace with actual API call
-const MOCK_ORDER: Order = {
-  id: 'ORD-2023-1021',
-  userId: '2',
-  customer: {
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+233 24 123 4567',
-    address: 'Accra, Ghana',
-  },
-  date: '2023-12-15T14:30:00Z',
-  totalAmount: 129.99,
-  items: [
-    {
-      id: '1',
-      name: 'Wireless Headphones',
-      quantity: 1,
-      price: 129.99,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D',
-    },
-  ],
-  status: 'delivered',
-  paymentStatus: 'paid',
-  shippingAddress: '123 Main St, Accra, Ghana',
-  trackingNumber: 'TRK-123456789',
-};
 
 export default function OrderDetails() {
   const { id } = useParams();
@@ -81,23 +51,36 @@ export default function OrderDetails() {
   const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    console.log("user: ", user);
-    // Check if user is admin
     if (!user || user.role !== 'admin') {
       navigate('/login');
       return;
     }
 
-    // Set mock order data
-    setOrder(MOCK_ORDER);
+    const fetchOrderDetails = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/api/orders/${id}`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
+        if (!response.ok) {
+          throw new Error('Failed to fetch order details');
+        }
 
-    return () => clearTimeout(timer);
-  }, [user, navigate]);
+        const data = await response.json();
+        setOrder(data.order);
+      } catch (error) {
+        console.error('Error fetching order details:', error);
+        toast.error('Failed to load order details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [user, navigate, id]);
 
   if (loading) {
     return (
@@ -165,26 +148,26 @@ export default function OrderDetails() {
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-slate-400" />
-              <span>{new Date(order.date).toLocaleDateString()}</span>
+              <span>{new Date(order.created_at).toLocaleDateString()}</span>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="h-5 w-5 text-slate-400" />
-              <span>{new Date(order.date).toLocaleTimeString()}</span>
+              <span>{new Date(order.created_at).toLocaleTimeString()}</span>
             </div>
             <div className="flex items-center gap-3">
               <CreditCard className="h-5 w-5 text-slate-400" />
               <span className={`px-2 py-1 rounded-full text-xs ${
-                order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
-                order.paymentStatus === 'unpaid' ? 'bg-yellow-100 text-yellow-800' :
+                order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                order.payment_status === 'unpaid' ? 'bg-yellow-100 text-yellow-800' :
                 'bg-red-100 text-red-800'
               }`}>
-                {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
               </span>
             </div>
-            {order.trackingNumber && (
+            {order.tracking_number && (
               <div className="flex items-center gap-3">
                 <Truck className="h-5 w-5 text-slate-400" />
-                <span>Tracking: {order.trackingNumber}</span>
+                <span>Tracking: {order.tracking_number}</span>
               </div>
             )}
           </div>
@@ -196,19 +179,15 @@ export default function OrderDetails() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <User className="h-5 w-5 text-slate-400" />
-              <span>{order.customer.name}</span>
+              <span>{order.customer_name}</span>
             </div>
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-slate-400" />
-              <span>{order.customer.email}</span>
+              <span>{order.customer_email}</span>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="h-5 w-5 text-slate-400" />
-              <span>{order.customer.phone}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-slate-400" />
-              <span>{order.shippingAddress}</span>
+              <span>{order.shipping_address}</span>
             </div>
           </div>
         </div>
@@ -252,7 +231,7 @@ export default function OrderDetails() {
               <DollarSign className="h-5 w-5 text-slate-400" />
               <span>Total Amount</span>
             </div>
-            <span className="font-medium">GHS {order.totalAmount.toLocaleString()}</span>
+            <span className="font-medium">GHS {order.total_price.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
