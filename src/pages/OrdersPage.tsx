@@ -78,11 +78,6 @@ export default function OrdersPage() {
     navigate('/login');
     return null;
   }
-
-
-
- 
- 
   console.log("Orders : ",orders);
 
   // const mockOrders: Order[] = [
