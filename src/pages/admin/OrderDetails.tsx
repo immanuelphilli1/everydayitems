@@ -58,7 +58,7 @@ export default function OrderDetails() {
 
     const fetchOrderDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/api/orders/${id}`, {
+        const response = await fetch(`http://localhost:3001/api/orders/admin/${id}`, {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
