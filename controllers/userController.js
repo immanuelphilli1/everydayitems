@@ -47,3 +47,50 @@ export const getUserStats = async (req, res) => {
     });
   }
 };
+
+export const getAllUser = async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Not authenticated',
+        });
+      }
+  
+      // Get user details with order statistics using a single query
+      const userStats = await query(
+        `SELECT 
+          u.id,
+          u.name,
+          u.email,
+          u.phone,
+          u.address,
+          u.created_at,
+          COUNT(DISTINCT o.id) as total_orders,
+          COALESCE(SUM(o.total_price), 0) as total_spent
+        FROM users u
+        LEFT JOIN orders o ON u.id = o.user_id
+        GROUP BY u.id, u.name, u.email`,
+        []
+      );
+  
+    //   if (userStats.rows.length === 0) {
+    //     return res.status(404).json({
+    //       status: 'error',
+    //       message: 'User not found',
+    //     });
+    //   }
+  
+      return res.status(200).json({
+        status: 'success',
+        data: userStats.rows,
+      });
+    } catch (error) {
+      console.error('Get user stats error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Failed to get user(s) statistics',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  };
