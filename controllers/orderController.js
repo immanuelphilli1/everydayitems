@@ -221,6 +221,17 @@ export const getUserOrderDetails = async (req, res) => {
       });
     }
 
+    //*******get user id from the order table and fetch the user email from the users table */
+    const userId = order.rows[0].user_id;
+    const user = await query('SELECT * FROM users WHERE id = $1', [userId]);
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
     // Get order items
     const orderItems = await query(
       'SELECT * FROM order_items WHERE order_id = $1',
@@ -232,6 +243,7 @@ export const getUserOrderDetails = async (req, res) => {
       order: {
         ...order.rows[0],
         items: orderItems.rows,
+        email: user.rows[0].email,
       },
     });
   } catch (error) {
