@@ -25,6 +25,7 @@ import Analytics from '@/pages/admin/Analytics';
 import CustomerDetails from '@/pages/admin/CustomerDetails';
 import OrderDetails from '@/pages/admin/OrderDetails';
 import EditProduct from '@/pages/admin/EditProduct';
+import PaymentStatus from '@/pages/PaymentStatus';
 
 export default function AppRoutes() {
   return (
@@ -47,6 +48,7 @@ export default function AppRoutes() {
       <Route path="/about" element={<AboutUs />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/orders" element={<OrdersPage />} />
+      <Route path="/payment-status" element={<PaymentStatus />} />
 
       {/* Admin routes */}
       <Route path="/admin" element={<AdminDashboard />} />
