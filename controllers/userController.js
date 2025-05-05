@@ -63,7 +63,7 @@ export const getAllUser = async (req, res) => {
           u.id,
           u.name,
           u.email,
-          u.phone,
+          u.phone_number,
           u.address,
           u.created_at,
           COUNT(DISTINCT o.id) as total_orders,
@@ -94,3 +94,72 @@ export const getAllUser = async (req, res) => {
       });
     }
   };
+
+export const getUserDetails = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Not authenticated',
+      });
+    }
+
+    const { id } = req.params;
+
+    // Get user details with order statistics
+    const userDetails = await query(
+      `SELECT 
+        u.id,
+        u.name,
+        u.email,
+        u.phone_number,
+        u.address,
+        u.created_at,
+        COUNT(DISTINCT o.id) as total_orders,
+        COALESCE(SUM(o.total_price), 0) as total_spent
+      FROM users u
+      LEFT JOIN orders o ON u.id = o.user_id
+      WHERE u.id = $1
+      GROUP BY u.id, u.name, u.email, u.phone_number, u.address, u.created_at`,
+      [id]
+    );
+
+    if (userDetails.rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    // Get user's orders
+    const orders = await query(
+      `SELECT 
+        o.id,
+        o.created_at as date,
+        o.total_price as total,
+        o.status,
+        COUNT(oi.id) as items
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE o.user_id = $1
+      GROUP BY o.id, o.created_at, o.total_price, o.status
+      ORDER BY o.created_at DESC`,
+      [id]
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        ...userDetails.rows[0],
+        orders: orders.rows
+      }
+    });
+  } catch (error) {
+    console.error('Get user details error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to get user details',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
