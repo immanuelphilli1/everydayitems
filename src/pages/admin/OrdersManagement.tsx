@@ -15,6 +15,7 @@ interface Order {
   items: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   payment_status: 'paid' | 'unpaid' | 'refunded';
+  is_paid: boolean;
 }
 
 export default function OrdersManagement() {
@@ -181,19 +182,10 @@ export default function OrdersManagement() {
   };
 
   // Get payment status badge class
-  const getPaymentStatusBadgeClass = (status: Order['payment_status']) => {
-    if (!status) return 'bg-gray-100 text-gray-800';
+  const getPaymentStatusBadgeClass = (isPaid: boolean) => {
+    if (!isPaid) return 'bg-orange-50 text-orange-700 border border-orange-200';
     
-    switch (status) {
-      case 'paid':
-        return 'bg-green-50 text-green-700 border border-green-200';
-      case 'unpaid':
-        return 'bg-orange-50 text-orange-700 border border-orange-200';
-      case 'refunded':
-        return 'bg-red-50 text-red-700 border border-red-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border border-gray-200';
-    }
+    return 'bg-green-50 text-green-700 border border-green-200';
   };
 
   if (loading) {
@@ -388,8 +380,8 @@ export default function OrdersManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(order.payment_status)}`}>
-                      {order.payment_status ? order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1) : 'Unknown'}
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(order.is_paid)}`}>
+                      {order.is_paid ? 'Paid' : 'Unpaid'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

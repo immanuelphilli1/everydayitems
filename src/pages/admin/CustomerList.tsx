@@ -19,45 +19,18 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface Customer {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  phone: string;
-  address: string;
-  joinDate: string;
-  totalOrders: number;
-  totalSpent: number;
-  status: 'active' | 'inactive';
+  phone_number: string | null;
+  address: string | null;
+  created_at: string;
+  total_orders: string;
+  total_spent: string;
 }
-
-// Mock data - replace with actual API call
-const MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+233 24 123 4567',
-    address: 'Accra, Ghana',
-    joinDate: '2024-01-15',
-    totalOrders: 5,
-    totalSpent: 2500,
-    status: 'active',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    phone: '+233 27 987 6543',
-    address: 'Kumasi, Ghana',
-    joinDate: '2024-02-01',
-    totalOrders: 3,
-    totalSpent: 1500,
-    status: 'active',
-  },
-  // Add more mock customers as needed
-];
 
 export default function CustomerList() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,21 +39,45 @@ export default function CustomerList() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
-    console.log("user: ", user);
-    // Check if user is admin
     if (!user || user.role !== 'admin') {
       navigate('/login');
       return;
     }
 
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    const fetchCustomers = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/admin/user', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-    return () => clearTimeout(timer);
+        if (!response.ok) {
+          throw new Error('Failed to fetch customers');
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+        
+        if (Array.isArray(data.data)) {
+          setCustomers(data.data);
+        } else {
+          console.error('Invalid API response format:', data);
+          toast.error('Invalid data format received');
+        }
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+        toast.error('Failed to load customers');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomers();
   }, [user, navigate]);
 
   if (loading) {
@@ -93,27 +90,27 @@ export default function CustomerList() {
     );
   }
 
-  const filteredCustomers = MOCK_CUSTOMERS.filter(customer => {
+  const filteredCustomers = customers.filter(customer => {
+    if (!customer) return false;
+    
     const matchesSearch = 
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.phone.includes(searchQuery);
+      (customer.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (customer.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (customer.phone_number || '').includes(searchQuery);
     
-    const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
+    return matchesSearch;
   });
 
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
     switch (sortBy) {
       case 'name':
-        return a.name.localeCompare(b.name);
+        return (a.name || '').localeCompare(b.name || '');
       case 'joinDate':
-        return new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case 'totalOrders':
-        return b.totalOrders - a.totalOrders;
+        return parseInt(b.total_orders) - parseInt(a.total_orders);
       case 'totalSpent':
-        return b.totalSpent - a.totalSpent;
+        return parseFloat(b.total_spent) - parseFloat(a.total_spent);
       default:
         return 0;
     }
@@ -133,16 +130,6 @@ export default function CustomerList() {
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue placeholder="Sort by" />
@@ -167,60 +154,58 @@ export default function CustomerList() {
               <TableHead>Join Date</TableHead>
               <TableHead>Orders</TableHead>
               <TableHead>Total Spent</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedCustomers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell className="font-medium">{customer.name}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-slate-400" />
-                      <span>{customer.email}</span>
+            {sortedCustomers.length > 0 ? (
+              sortedCustomers.map((customer) => (
+                <TableRow key={customer.id}>
+                  <TableCell className="font-medium">{customer.name || 'N/A'}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-slate-400" />
+                        <span>{customer.email || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-slate-400" />
+                        <span>{customer.phone_number || 'N/A'}</span>
+                      </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-slate-400" />
-                      <span>{customer.phone}</span>
+                      <MapPin className="h-4 w-4 text-slate-400" />
+                      <span>{customer.address || 'N/A'}</span>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-slate-400" />
-                    <span>{customer.address}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-slate-400" />
-                    <span>{new Date(customer.joinDate).toLocaleDateString()}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{customer.totalOrders}</TableCell>
-                <TableCell>GHS {customer.totalSpent.toLocaleString()}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    customer.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {customer.status}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => navigate(`/admin/customers/${customer.id}`)}
-                  >
-                    View Details
-                  </Button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-slate-400" />
+                      <span>{new Date(customer.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{customer.total_orders}</TableCell>
+                  <TableCell>GHS {parseFloat(customer.total_spent).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => navigate(`/admin/customers/${customer.id}`)}
+                    >
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-4">
+                  No customers found
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>

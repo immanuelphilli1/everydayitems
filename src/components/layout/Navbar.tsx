@@ -156,12 +156,14 @@ export default function Navbar() {
           </div>
           <div className="hidden md:flex items-center space-x-8">
             <div className="flex items-center space-x-4">
+              {user?.role === "user" &&
               <Link to="/cart" className="relative">
                 <ShoppingCart className="h-6 w-6 text-slate-700 hover:text-[#138db3] transition-colors" />
                 <span className="absolute -top-2 -right-2 bg-[#138db3] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {cartItems.length}
                 </span>
               </Link>
+}
 
               {user ? (
                 <div className="relative group">

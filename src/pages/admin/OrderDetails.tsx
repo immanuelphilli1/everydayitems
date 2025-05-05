@@ -29,6 +29,18 @@ interface OrderItem {
   image: string;
 }
 
+interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+}
+
 interface Order {
   id: string;
   user_id: string;
@@ -36,10 +48,12 @@ interface Order {
   customer_email: string;
   created_at: string;
   total_price: number;
+  email: string;
+  is_paid: boolean;
   items: OrderItem[];
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   payment_status: 'paid' | 'unpaid' | 'refunded';
-  shipping_address: string;
+  shipping_address: ShippingAddress;
   tracking_number?: string;
 }
 
@@ -110,6 +124,8 @@ export default function OrderDetails() {
   }
 
   const getStatusIcon = (status: Order['status']) => {
+    if (!status) return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+    
     switch (status) {
       case 'delivered':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -121,6 +137,11 @@ export default function OrderDetails() {
       default:
         return <AlertCircle className="h-5 w-5 text-yellow-500" />;
     }
+  };
+
+  const formatStatus = (status: string | undefined) => {
+    if (!status) return 'Unknown';
+    return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
@@ -157,11 +178,11 @@ export default function OrderDetails() {
             <div className="flex items-center gap-3">
               <CreditCard className="h-5 w-5 text-slate-400" />
               <span className={`px-2 py-1 rounded-full text-xs ${
-                order.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                order.payment_status === 'unpaid' ? 'bg-yellow-100 text-yellow-800' :
+                order?.is_paid ? 'bg-green-100 text-green-800' :
+                !order?.is_paid ? 'bg-yellow-100 text-yellow-800' :
                 'bg-red-100 text-red-800'
               }`}>
-                {order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}
+                {order?.is_paid ? 'Paid' : 'Unpaid'}
               </span>
             </div>
             {order.tracking_number && (
@@ -179,15 +200,32 @@ export default function OrderDetails() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <User className="h-5 w-5 text-slate-400" />
-              <span>{order.customer_name}</span>
+              <span className='capitalize'>{order?.shipping_address?.firstName || 'N/A'} {order?.shipping_address?.lastName || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-slate-400" />
-              <span>{order.customer_email}</span>
+              <span>{order?.email || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="h-5 w-5 text-slate-400" />
-              <span>{order.shipping_address}</span>
+              <span>{order?.shipping_address?.phone || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="h-5 w-5 text-slate-400" />
+              <div className="flex flex-col">
+                <span>{order?.shipping_address?.address1 || 'N/A'}</span>
+                {order?.shipping_address?.address2 && (
+                  <span>{order.shipping_address.address2}</span>
+                )}
+                <span>
+                  {[
+                    order?.shipping_address?.city,
+                    order?.shipping_address?.state,
+                    order?.shipping_address?.postalCode,
+                    order?.shipping_address?.country
+                  ].filter(Boolean).join(', ')}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -200,7 +238,7 @@ export default function OrderDetails() {
           {order.items.map((item) => (
             <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
               <div className="flex items-center gap-4">
-                <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
+                <img src={`http://localhost:3001${item.image}`} alt={item.name} className="w-16 h-16 object-cover rounded" />
                 <div>
                   <h3 className="font-medium text-slate-800">{item.name}</h3>
                   <p className="text-sm text-slate-500">Quantity: {item.quantity}</p>
@@ -235,17 +273,17 @@ export default function OrderDetails() {
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {getStatusIcon(order.status)}
+              {getStatusIcon(order?.status)}
               <span>Status</span>
             </div>
             <span className={`px-2 py-1 rounded-full text-xs ${
-              order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-              order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-              order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
-              order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+              order?.status === 'delivered' ? 'bg-green-100 text-green-800' :
+              order?.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+              order?.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+              order?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
               'bg-yellow-100 text-yellow-800'
             }`}>
-              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              {formatStatus(order?.status)}
             </span>
           </div>
         </div>
