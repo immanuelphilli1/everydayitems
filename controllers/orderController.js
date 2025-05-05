@@ -35,13 +35,15 @@ export const createOrder = async (req, res) => {
 
     const orderId = newOrder.rows[0].id;
 
+    console.log(items);
+
     // Add order items
     for (const item of items) {
       await query(
         `INSERT INTO order_items
          (order_id, product_id, name, quantity, price, image)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [orderId, item.productId??product_id, item.name, item.quantity, item.price, item.image]
+        [orderId, item.product_id, item.name, item.quantity, item.price, item.image]
       );
     }
 
@@ -189,6 +191,54 @@ export const getAllOrders = async (req, res) => {
     return res.status(500).json({
       status: 'error',
       message: 'Failed to get orders',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+export const getUserOrderDetails = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Not authenticated',
+      });
+    }
+
+    // const userId = req.user.id;
+    const { id } = req.params;
+
+    // Get order
+    const order = await query(
+      'SELECT * FROM orders WHERE id = $1',
+      [id]
+    );
+
+    if (order.rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Order not found',
+      });
+    }
+
+    // Get order items
+    const orderItems = await query(
+      'SELECT * FROM order_items WHERE order_id = $1',
+      [id]
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      order: {
+        ...order.rows[0],
+        items: orderItems.rows,
+      },
+    });
+  } catch (error) {
+    console.error('Get order details error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to get order details',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }

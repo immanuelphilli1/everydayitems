@@ -4,6 +4,7 @@ import {
   getUserOrders,
   getOrderDetails,
   getAllOrders,
+  getUserOrderDetails,
   updateOrderStatus,
   deleteOrder,
 } from '../controllers/orderController.js';
@@ -22,6 +23,7 @@ router.delete('/:id', deleteOrder);
 
 // Admin routes
 router.get('/', restrictTo('admin'), getAllOrders);
+router.get('/admin/:id', restrictTo('admin'), getUserOrderDetails);
 router.patch('/:id/status', restrictTo('admin'), updateOrderStatus);
 
 export default router;
