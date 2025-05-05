@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface StatCard {
   title: string;
@@ -26,67 +27,75 @@ interface StatCard {
   color: string;
 }
 
-// Mock data - replace with actual API calls
-const MOCK_STATS: StatCard[] = [
-  {
-    title: 'Total Revenue',
-    value: 'GHS 45,000',
-    change: 12.5,
-    icon: <DollarSign className="h-6 w-6" />,
-    color: 'bg-green-100 text-green-600',
-  },
-  {
-    title: 'Total Orders',
-    value: 156,
-    change: 8.2,
-    icon: <ShoppingCart className="h-6 w-6" />,
-    color: 'bg-blue-100 text-blue-600',
-  },
-  {
-    title: 'New Customers',
-    value: 45,
-    change: -2.4,
-    icon: <Users className="h-6 w-6" />,
-    color: 'bg-purple-100 text-purple-600',
-  },
-  {
-    title: 'Average Order Value',
-    value: 'GHS 288',
-    change: 5.7,
-    icon: <TrendingUp className="h-6 w-6" />,
-    color: 'bg-orange-100 text-orange-600',
-  },
-];
-
-const MOCK_TOP_PRODUCTS = [
-  { name: 'Sony PlayStation Pulse Elite Wireless Headset', sales: 45, revenue: 'GHS 112,500' },
-  { name: 'Midea 1.5 hp Inverter Air Conditioner', sales: 38, revenue: 'GHS 247,000' },
-  { name: 'TCL 55 inch Smart Android TV', sales: 32, revenue: 'GHS 208,000' },
-  { name: 'Midea 4L Air Fryer', sales: 28, revenue: 'GHS 28,000' },
-  { name: 'EverydayItems 499 pieces Professional Tool Set', sales: 25, revenue: 'GHS 62,500' },
-];
-
 export default function Analytics() {
   const [timeRange, setTimeRange] = useState('30days');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<StatCard[]>([]);
 
   useEffect(() => {
-    console.log("user: ", user);
-    // Check if user is admin
     if (!user || user.role !== 'admin') {
       navigate('/login');
       return;
     }
 
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:3001/api/admin/dashboard/stats', {
+          credentials: 'include',
+        });
 
-    return () => clearTimeout(timer);
-  }, [user, navigate]);
+        if (!response.ok) {
+          throw new Error('Failed to fetch analytics data');
+        }
+
+        const data = await response.json();
+        
+        // Transform the API data into our stats format
+        const transformedStats: StatCard[] = [
+          {
+            title: 'Total Revenue',
+            value: `GHS ${data.data.totalRevenue.toLocaleString()}`,
+            change: data.data.revenueChange,
+            icon: <DollarSign className="h-6 w-6" />,
+            color: 'bg-green-100 text-green-600',
+          },
+          {
+            title: 'Total Orders',
+            value: data.data.totalOrders,
+            change: data.data.ordersChange,
+            icon: <ShoppingCart className="h-6 w-6" />,
+            color: 'bg-blue-100 text-blue-600',
+          },
+          {
+            title: 'Total Customers',
+            value: data.data.totalCustomers,
+            change: data.data.customersChange,
+            icon: <Users className="h-6 w-6" />,
+            color: 'bg-purple-100 text-purple-600',
+          },
+          {
+            title: 'Average Order Value',
+            value: `GHS ${(data.data.totalRevenue / data.data.totalOrders).toLocaleString()}`,
+            change: data.data.revenueChange - data.data.ordersChange,
+            icon: <TrendingUp className="h-6 w-6" />,
+            color: 'bg-orange-100 text-orange-600',
+          },
+        ];
+
+        setStats(transformedStats);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+        toast.error('Failed to load analytics data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [user, navigate, timeRange]);
 
   if (loading) {
     return (
@@ -120,7 +129,7 @@ export default function Analytics() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {MOCK_STATS.map((stat, index) => (
+        {stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 rounded-full ${stat.color}`}>
@@ -133,7 +142,7 @@ export default function Analytics() {
                   <ArrowDownRight className="h-4 w-4 text-red-500" />
                 )}
                 <span className={`text-sm ${stat.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {Math.abs(stat.change)}%
+                  {Math.abs(stat.change).toFixed(1)}%
                 </span>
               </div>
             </div>
@@ -156,21 +165,23 @@ export default function Analytics() {
               </tr>
             </thead>
             <tbody>
-              {MOCK_TOP_PRODUCTS.map((product, index) => (
-                <tr key={index} className="border-b last:border-0">
-                  <td className="py-3 px-4">
-                    <div className="text-sm font-medium text-slate-800">{product.name}</div>
+              {stats.length > 0 ? (
+                <tr className="border-b">
+                  <td colSpan={3} className="py-8 text-center text-slate-500">
+                    Coming soon...
                   </td>
-                  <td className="py-3 px-4 text-right text-sm text-slate-600">{product.sales}</td>
-                  <td className="py-3 px-4 text-right text-sm text-slate-600">{product.revenue}</td>
                 </tr>
-              ))}
+              ) : (
+                <tr className="border-b">
+                  <td colSpan={3} className="py-8 text-center text-slate-500">
+                    No data available
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
-
-      {/* Add more sections as needed */}
     </div>
   );
 } 

@@ -34,7 +34,6 @@ interface Customer {
 
 export default function CustomerList() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +71,7 @@ export default function CustomerList() {
       } catch (error) {
         console.error('Error fetching customers:', error);
         toast.error('Failed to load customers');
+        window.location.href = '/login';
       } finally {
         setLoading(false);
       }

@@ -82,21 +82,21 @@ export default function Navbar() {
     if (user.role === 'admin') {
       return (
         <>
-          <button onClick={() => window.location.href = '/admin'} className="py-2 w-full text-left hover:text-[#138db3]">
-            Admin Dashboard
-          </button>
-          <button onClick={() => window.location.href = '/admin/products'} className="py-2 w-full text-left hover:text-[#138db3]">
-            Manage Products
-          </button>
-          <button onClick={() => window.location.href = '/admin/orders'} className="py-2 w-full text-left hover:text-[#138db3]">
-            View Orders
-          </button>
-          <button onClick={() => window.location.href = '/admin/customers'} className="py-2 w-full text-left hover:text-[#138db3]">
+        <Link to="/admin" className="py-2 w-full text-left hover:text-[#138db3]">
+          Admin Dashboard
+        </Link>
+        <Link to="/admin/products" className="py-2 w-full text-left hover:text-[#138db3]">
+          Manage Products
+        </Link>
+        <Link to="/admin/orders" className="py-2 w-full text-left hover:text-[#138db3]">
+          View Orders
+        </Link>
+          <Link to="/admin/customers" className="py-2 w-full text-left hover:text-[#138db3]">
             Customer List
-          </button>
-          <button onClick={() => window.location.href = '/admin/analytics'} className="py-2 w-full text-left hover:text-[#138db3]">
+          </Link>
+          <Link to="/admin/analytics" className="py-2 w-full text-left hover:text-[#138db3]">
             Analytics
-          </button>
+          </Link>
           <button
             onClick={handleLogout}
             className="py-2 text-left text-red-600"
@@ -194,12 +194,14 @@ export default function Navbar() {
             <Link to="/products" className="relative">
               <Search className="h-6 w-6 text-slate-700" />
             </Link>
+            {user?.role === "user" &&
             <Link to="/cart" className="relative">
               <ShoppingCart className="h-6 w-6 text-slate-700 hover:text-[#138db3] transition-colors" />
               <span className="absolute -top-2 -right-2 bg-[#138db3] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {cartItems.length}
               </span>
             </Link>
+            }
             <button
               className="text-slate-700 focus:outline-none"
               onClick={() => setIsMenuOpen(!isMenuOpen)}

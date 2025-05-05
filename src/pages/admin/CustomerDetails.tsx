@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -24,53 +25,16 @@ interface Order {
 }
 
 interface Customer {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  phone: string;
-  address: string;
-  joinDate: string;
-  totalOrders: number;
-  totalSpent: number;
-  status: 'active' | 'inactive';
+  phone_number: string | null;
+  address: string | null;
+  created_at: string;
+  total_orders: string;
+  total_spent: string;
   orders: Order[];
 }
-
-// Mock data - replace with actual API call
-const MOCK_CUSTOMER: Customer = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
-  phone: '+233 24 123 4567',
-  address: 'Accra, Ghana',
-  joinDate: '2024-01-15',
-  totalOrders: 5,
-  totalSpent: 2500,
-  status: 'active',
-  orders: [
-    {
-      id: 'ORD001',
-      date: '2024-02-15',
-      total: 500,
-      status: 'delivered',
-      items: 2
-    },
-    {
-      id: 'ORD002',
-      date: '2024-02-20',
-      total: 800,
-      status: 'processing',
-      items: 3
-    },
-    {
-      id: 'ORD003',
-      date: '2024-03-01',
-      total: 1200,
-      status: 'shipped',
-      items: 4
-    }
-  ]
-};
 
 export default function CustomerDetails() {
   const { id } = useParams();
@@ -78,6 +42,7 @@ export default function CustomerDetails() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -85,14 +50,36 @@ export default function CustomerDetails() {
       return;
     }
 
-    // Simulate API call
-    const timer = setTimeout(() => {
-      setCustomer(MOCK_CUSTOMER);
-      setLoading(false);
-    }, 500);
+    const fetchCustomerDetails = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/api/admin/user/${id}`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-    return () => clearTimeout(timer);
-  }, [user, navigate]);
+        if (!response.ok) {
+          throw new Error('Failed to fetch customer details');
+        }
+
+        const data = await response.json();
+        if (data.data) {
+          setCustomer(data.data);
+        } else {
+          throw new Error('Invalid data format received');
+        }
+      } catch (error) {
+        console.error('Error fetching customer details:', error);
+        setError('Failed to load customer details');
+        toast.error('Failed to load customer details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomerDetails();
+  }, [user, navigate, id]);
 
   if (loading) {
     return (
@@ -104,7 +91,7 @@ export default function CustomerDetails() {
     );
   }
 
-  if (!customer) {
+  if (error || !customer) {
     return (
       <div className="container mx-auto px-4 py-24">
         <div className="text-center">
@@ -148,12 +135,8 @@ export default function CustomerDetails() {
               </div>
               <div>
                 <h3 className="font-medium text-slate-800">{customer.name}</h3>
-                <span className={`text-sm px-2 py-1 rounded-full ${
-                  customer.status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {customer.status}
+                <span className="bg-green-100 text-green-800 text-sm px-2 py-1 rounded-full">
+                  active
                 </span>
               </div>
             </div>
@@ -163,15 +146,15 @@ export default function CustomerDetails() {
             </div>
             <div className="flex items-center gap-3">
               <Phone className="h-5 w-5 text-slate-400" />
-              <span>{customer.phone}</span>
+              <span>{customer.phone_number || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-slate-400" />
-              <span>{customer.address}</span>
+              <span>{customer.address || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-slate-400" />
-              <span>Joined {new Date(customer.joinDate).toLocaleDateString()}</span>
+              <span>Joined {new Date(customer.created_at).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -185,14 +168,14 @@ export default function CustomerDetails() {
                 <ShoppingBag className="h-5 w-5 text-[#138db3]" />
                 <span className="text-sm text-slate-600">Total Orders</span>
               </div>
-              <p className="text-2xl font-semibold text-slate-800">{customer.totalOrders}</p>
+              <p className="text-2xl font-semibold text-slate-800">{customer.total_orders}</p>
             </div>
             <div className="p-4 bg-slate-50 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="h-5 w-5 text-[#138db3]" />
                 <span className="text-sm text-slate-600">Total Spent</span>
               </div>
-              <p className="text-2xl font-semibold text-slate-800">GHS {customer.totalSpent.toLocaleString()}</p>
+              <p className="text-2xl font-semibold text-slate-800">GHS {parseFloat(customer.total_spent).toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -213,42 +196,50 @@ export default function CustomerDetails() {
               </tr>
             </thead>
             <tbody>
-              {customer.orders.map((order) => (
-                <tr key={order.id} className="border-b last:border-0">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <Package className="h-4 w-4 text-slate-400" />
-                      <span className="text-sm font-medium text-slate-800">{order.id}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-slate-400" />
-                      <span className="text-sm text-slate-600">
-                        {new Date(order.date).toLocaleDateString()}
+              {customer.orders && customer.orders.length > 0 ? (
+                customer.orders.map((order) => (
+                  <tr key={order.id} className="border-b last:border-0">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-slate-400" />
+                        <span className="text-sm font-medium text-slate-800">{order.id}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-slate-400" />
+                        <span className="text-sm text-slate-600">
+                          {new Date(order.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-slate-600">{order.items} items</td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <CreditCard className="h-4 w-4 text-slate-400" />
+                        <span className="text-sm text-slate-600">GHS {order.total.toLocaleString()}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {order.status}
                       </span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-slate-600">{order.items} items</td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <CreditCard className="h-4 w-4 text-slate-400" />
-                      <span className="text-sm text-slate-600">GHS {order.total.toLocaleString()}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                      order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                      order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
-                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {order.status}
-                    </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center py-4 text-slate-500">
+                    No orders found
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
