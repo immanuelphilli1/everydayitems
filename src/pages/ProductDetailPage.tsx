@@ -4,6 +4,7 @@ import { Star, Truck, ShieldCheck, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -111,6 +112,7 @@ export default function ProductDetailPage() {
         quantity,
         image: product.image
       });
+      toast.success('Added to cart', {position: 'top-center'});
     }
   };
 

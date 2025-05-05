@@ -7,16 +7,14 @@ import { Input } from '@/components/ui/input';
 
 interface Order {
   id: string;
-  userId: string;
-  customer: {
-    name: string;
-    email: string;
-  };
-  date: string;
-  totalAmount: number;
+  user_id: string;
+  customer_name: string;
+  customer_email: string;
+  created_at: string;
+  total_price: number;
   items: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentStatus: 'paid' | 'unpaid' | 'refunded';
+  payment_status: 'paid' | 'unpaid' | 'refunded';
 }
 
 export default function OrdersManagement() {
@@ -31,101 +29,6 @@ export default function OrdersManagement() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [showStatusDropdown, setShowStatusDropdown] = useState<string | null>(null);
 
-  // Mock orders data
-  const mockOrders: Order[] = [
-    {
-      id: 'ORD-2023-1021',
-      userId: '2',
-      customer: {
-        name: 'John Doe',
-        email: 'john@example.com',
-      },
-      date: '2023-12-15T14:30:00Z',
-      totalAmount: 129.99,
-      items: 1,
-      status: 'delivered',
-      paymentStatus: 'paid',
-    },
-    {
-      id: 'ORD-2023-1020',
-      userId: '3',
-      customer: {
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-      },
-      date: '2023-12-14T10:15:00Z',
-      totalAmount: 79.95,
-      items: 2,
-      status: 'shipped',
-      paymentStatus: 'paid',
-    },
-    {
-      id: 'ORD-2023-1019',
-      userId: '4',
-      customer: {
-        name: 'Robert Johnson',
-        email: 'robert@example.com',
-      },
-      date: '2023-12-14T08:45:00Z',
-      totalAmount: 249.50,
-      items: 3,
-      status: 'processing',
-      paymentStatus: 'paid',
-    },
-    {
-      id: 'ORD-2023-1018',
-      userId: '5',
-      customer: {
-        name: 'Lisa Brown',
-        email: 'lisa@example.com',
-      },
-      date: '2023-12-13T16:20:00Z',
-      totalAmount: 59.99,
-      items: 1,
-      status: 'pending',
-      paymentStatus: 'unpaid',
-    },
-    {
-      id: 'ORD-2023-1017',
-      userId: '6',
-      customer: {
-        name: 'Michael Wilson',
-        email: 'michael@example.com',
-      },
-      date: '2023-12-12T11:10:00Z',
-      totalAmount: 199.99,
-      items: 1,
-      status: 'delivered',
-      paymentStatus: 'paid',
-    },
-    {
-      id: 'ORD-2023-1016',
-      userId: '7',
-      customer: {
-        name: 'Emily Davis',
-        email: 'emily@example.com',
-      },
-      date: '2023-12-11T09:30:00Z',
-      totalAmount: 149.95,
-      items: 2,
-      status: 'cancelled',
-      paymentStatus: 'refunded',
-    },
-    {
-      id: 'ORD-2023-1015',
-      userId: '8',
-      customer: {
-        name: 'David Clark',
-        email: 'david@example.com',
-      },
-      date: '2023-12-10T14:45:00Z',
-      totalAmount: 299.99,
-      items: 1,
-      status: 'delivered',
-      paymentStatus: 'paid',
-    },
-  ];
-
   useEffect(() => {
     // Check if user is admin
     if (!user || user.role !== 'admin') {
@@ -133,11 +36,31 @@ export default function OrdersManagement() {
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      setOrders(mockOrders);
-      setLoading(false);
-    }, 500);
+    // Fetch orders from API
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/orders', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+
+        const data = await response.json();
+        setOrders(data.orders);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
   }, [user, navigate]);
 
   // Handle sorting
@@ -157,8 +80,8 @@ export default function OrdersManagement() {
       if (
         searchTerm &&
         !order.id.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !order.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+        !order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !order.customer_email.toLowerCase().includes(searchTerm.toLowerCase())
       ) {
         return false;
       }
@@ -174,12 +97,12 @@ export default function OrdersManagement() {
       // Sort by selected field
       if (sortField === 'date') {
         return sortDirection === 'asc'
-          ? new Date(a.date).getTime() - new Date(b.date).getTime()
-          : new Date(b.date).getTime() - new Date(a.date).getTime();
+          ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       } else if (sortField === 'totalAmount') {
         return sortDirection === 'asc'
-          ? a.totalAmount - b.totalAmount
-          : b.totalAmount - a.totalAmount;
+          ? a.total_price - b.total_price
+          : b.total_price - a.total_price;
       } else {
         // Sort by ID (string)
         return sortDirection === 'asc'
@@ -189,15 +112,32 @@ export default function OrdersManagement() {
     });
 
   // Handle order status update
-  const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    // In a real app, this would call an API to update the order
-    setOrders(orders.map(order => {
-      if (order.id === orderId) {
-        return { ...order, status: newStatus };
+  const updateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
       }
-      return order;
-    }));
-    setShowStatusDropdown(null);
+
+      // Update local state
+      setOrders(orders.map(order => {
+        if (order.id === orderId) {
+          return { ...order, status: newStatus };
+        }
+        return order;
+      }));
+      setShowStatusDropdown(null);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
   };
 
   // Format date
@@ -222,33 +162,37 @@ export default function OrdersManagement() {
 
   // Get status badge class
   const getStatusBadgeClass = (status: Order['status']) => {
+    if (!status) return 'bg-gray-100 text-gray-800';
+    
     switch (status) {
       case 'delivered':
-        return 'bg-emerald-100 text-emerald-800';
+        return 'bg-green-50 text-green-700 border border-green-200';
       case 'shipped':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
       case 'processing':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
       case 'pending':
-        return 'bg-slate-100 text-slate-800';
+        return 'bg-purple-50 text-purple-700 border border-purple-200';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-50 text-red-700 border border-red-200';
       default:
-        return 'bg-slate-100 text-slate-800';
+        return 'bg-gray-50 text-gray-700 border border-gray-200';
     }
   };
 
   // Get payment status badge class
-  const getPaymentStatusBadgeClass = (status: Order['paymentStatus']) => {
+  const getPaymentStatusBadgeClass = (status: Order['payment_status']) => {
+    if (!status) return 'bg-gray-100 text-gray-800';
+    
     switch (status) {
       case 'paid':
-        return 'bg-emerald-100 text-emerald-800';
+        return 'bg-green-50 text-green-700 border border-green-200';
       case 'unpaid':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-orange-50 text-orange-700 border border-orange-200';
       case 'refunded':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-50 text-red-700 border border-red-200';
       default:
-        return 'bg-slate-100 text-slate-800';
+        return 'bg-gray-50 text-gray-700 border border-gray-200';
     }
   };
 
@@ -358,21 +302,21 @@ export default function OrdersManagement() {
                     {order.id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm font-medium text-slate-900">{order.customer.name}</p>
-                    <p className="text-xs text-slate-500">{order.customer.email}</p>
+                    <p className="text-sm font-medium text-slate-900">{order.customer_name}</p>
+                    <p className="text-xs text-slate-500">{order.customer_email}</p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <Calendar size={14} className="text-slate-400 mr-1" />
-                      <span className="text-sm text-slate-700">{formatDate(order.date)}</span>
+                      <span className="text-sm text-slate-700">{formatDate(order.created_at)}</span>
                     </div>
                     <div className="flex items-center mt-1">
                       <Clock size={14} className="text-slate-400 mr-1" />
-                      <span className="text-xs text-slate-500">{formatTime(order.date)}</span>
+                      <span className="text-xs text-slate-500">{formatTime(order.created_at)}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                    ${order.totalAmount.toFixed(2)}
+                    ${order.total_price}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     {order.items} {order.items === 1 ? 'item' : 'items'}
@@ -387,7 +331,7 @@ export default function OrdersManagement() {
                           setShowStatusDropdown(showStatusDropdown === order.id ? null : order.id);
                         }}
                       >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
                         <ChevronDown size={14} className="ml-1" />
                       </button>
 
@@ -421,17 +365,6 @@ export default function OrdersManagement() {
                                 className="block w-full text-left px-4 py-2 hover:bg-slate-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  updateOrderStatus(order.id, 'shipped');
-                                }}
-                              >
-                                Shipped
-                              </button>
-                            </li>
-                            <li>
-                              <button
-                                className="block w-full text-left px-4 py-2 hover:bg-slate-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
                                   updateOrderStatus(order.id, 'delivered');
                                 }}
                               >
@@ -455,8 +388,8 @@ export default function OrdersManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(order.paymentStatus)}`}>
-                      {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getPaymentStatusBadgeClass(order.payment_status)}`}>
+                      {order.payment_status ? order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1) : 'Unknown'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

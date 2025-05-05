@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -32,8 +33,10 @@ export default function ProductCard({ product }: ProductCardProps) {
       name: product.name,
       price: product.price,
       quantity: 1,
-      image: product.image
+      image: product.image,
+      status: 'active'
     });
+    toast.success('Added to cart', {position: 'top-center'});
   };
 
   return (
