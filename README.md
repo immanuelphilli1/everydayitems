@@ -149,8 +149,8 @@ ecommerce-app/
 - GET /api/cart - Get cart items
 - POST /api/cart/add - Add item to cart
 - POST /api/cart/sync - Sync cart after login
-- PUT /api/cart/update/:productId - Update cart item
-- DELETE /api/cart/remove/:productId - Remove from cart
+- PUT /api/cart/update/:product_id - Update cart item
+- DELETE /api/cart/remove/:product_id - Remove from cart
 - DELETE /api/cart/clear - Clear cart
 
 ### Orders

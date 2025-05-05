@@ -105,7 +105,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (product) {
       addItem({
-        productId: product.id,
+        product_id: product.id,
         status: 'active',
         name: product.name,
         price: product.price,

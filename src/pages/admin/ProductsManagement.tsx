@@ -97,19 +97,19 @@ export default function ProductsManagement() {
       return 0;
     });
 
-  const handleDeleteConfirmation = (productId: string) => {
-    setDeleteConfirmation(productId);
+  const handleDeleteConfirmation = (product_id: string) => {
+    setDeleteConfirmation(product_id);
   };
 
-  const handleDeleteProduct = async (productId: string) => {
+  const handleDeleteProduct = async (product_id: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/products/${productId}`, {
+      const response = await fetch(`http://localhost:3001/api/products/${product_id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
 
       if (response.ok) {
-        setProducts(products.filter(product => product.id !== productId));
+        setProducts(products.filter(product => product.id !== product_id));
         toast.success('Product deleted successfully');
       } else {
         toast.error('Failed to delete product');
@@ -122,12 +122,12 @@ export default function ProductsManagement() {
     }
   };
 
-  const handleToggleFeatured = async (productId: string) => {
+  const handleToggleFeatured = async (product_id: string) => {
     try {
-      const product = products.find(p => p.id === productId);
+      const product = products.find(p => p.id === product_id);
       if (!product) return;
 
-      const response = await fetch(`http://localhost:3001/api/products/${productId}`, {
+      const response = await fetch(`http://localhost:3001/api/products/${product_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +141,7 @@ export default function ProductsManagement() {
 
       if (response.ok) {
         setProducts(products.map(p => 
-          p.id === productId ? { ...p, featured: !p.featured } : p
+          p.id === product_id ? { ...p, featured: !p.featured } : p
         ));
         toast.success('Product updated successfully');
       } else {
@@ -196,6 +196,7 @@ export default function ProductsManagement() {
           {/* Category filter */}
           <div>
             <select
+              title='category filter'
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full h-10 rounded-md border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

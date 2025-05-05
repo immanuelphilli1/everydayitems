@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export interface CartItem {
   id: string;
-  productId: string;
+  product_id: string;
   name: string;
   price: number;
   quantity: number;
@@ -19,8 +19,8 @@ interface CartContextType {
   loading: boolean;
   error: string | null;
   addItem: (item: Omit<CartItem, 'id'>) => Promise<void>;
-  updateItemQuantity: (productId: string, quantity: number) => Promise<void>;
-  removeItem: (productId: string) => Promise<void>;
+  updateItemQuantity: (product_id: string, quantity: number) => Promise<void>;
+  removeItem: (product_id: string) => Promise<void>;
   clearCart: () => Promise<void>;
   syncCart: () => Promise<void>;
 }
@@ -90,7 +90,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
 
       // Check if item already exists in cart
-      const existingItemIndex = items.findIndex((i) => i.productId === item.productId);
+      const existingItemIndex = items.findIndex((i) => i.product_id === item.product_id);
 
       if (existingItemIndex >= 0) {
         // Update quantity if item exists
@@ -114,23 +114,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateItemQuantity = async (productId: string, quantity: number) => {
+  const updateItemQuantity = async (product_id: string, quantity: number) => {
     try {
       setLoading(true);
       setError(null);
 
       if (quantity <= 0) {
-        return removeItem(productId);
+        return removeItem(product_id);
       }
 
       const updatedItems = items.map((item) =>
-        item.productId === productId ? { ...item, quantity } : item
+        item.product_id === product_id ? { ...item, quantity } : item
       );
       setItems(updatedItems);
 
       // If user is logged in, sync with server
       if (user) {
-        await axios.put(`http://localhost:3001/api/cart/update/${productId}`, { quantity }, { withCredentials: true });
+        await axios.put(`http://localhost:3001/api/cart/update/${product_id}`, { quantity }, { withCredentials: true });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update item quantity');
@@ -139,17 +139,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const removeItem = async (productId: string) => {
+  const removeItem = async (product_id: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      const updatedItems = items.filter((item) => item.productId !== productId);
+      const updatedItems = items.filter((item) => item.product_id !== product_id);
       setItems(updatedItems);
 
       // If user is logged in, sync with server
       if (user) {
-        await axios.delete(`http://localhost:3001/api/cart/remove/${productId}`, { withCredentials: true });
+        await axios.delete(`http://localhost:3001/api/cart/remove/${product_id}`, { withCredentials: true });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to remove item from cart');

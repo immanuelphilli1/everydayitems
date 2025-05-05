@@ -98,12 +98,12 @@ export default function CartPage() {
                       <div className="flex flex-col sm:flex-row sm:justify-between">
                         <div>
                           <h3 className="text-base font-medium text-slate-900">
-                            <Link to={`/products/${item.productId}`} className="hover:text-[#138db3]">
+                            <Link to={`/products/${item.product_id}`} className="hover:text-[#138db3]">
                               {item.name}
                             </Link>
                           </h3>
                           <p className="mt-1 text-sm text-slate-500">
-                            Item #{item.productId}
+                            Item #{item.product_id}
                           </p>
                         </div>
                         <div className="mt-2 sm:mt-0 flex sm:flex-col items-center sm:items-end justify-between">
@@ -121,7 +121,7 @@ export default function CartPage() {
                             title='Decrease quantity'
                             type="button"
                             className="p-2 text-slate-600 hover:text-slate-900"
-                            onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                            onClick={() => handleQuantityChange(item.product_id, item.quantity - 1)}
                             disabled={item.quantity <= 1}
                           >
                             <Minus size={16} />
@@ -131,7 +131,7 @@ export default function CartPage() {
                             title='Increase quantity'
                             type="button"
                             className="p-2 text-slate-600 hover:text-slate-900"
-                            onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                            onClick={() => handleQuantityChange(item.product_id, item.quantity + 1)}
                           >
                             <Plus size={16} />
                           </button>
@@ -139,7 +139,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           className="text-red-600 hover:text-red-800 text-sm flex items-center"
-                          onClick={() => handleRemoveItem(item.productId)}
+                          onClick={() => handleRemoveItem(item.product_id)}
                         >
                           <X size={16} className="mr-1" /> Remove
                         </button>
