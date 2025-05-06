@@ -19,6 +19,7 @@ export const createOrder = async (req, res) => {
       totalPrice,
       shippingPrice,
       taxPrice,
+      reference,
     } = req.body;
 
     // Begin transaction
@@ -27,10 +28,10 @@ export const createOrder = async (req, res) => {
     // Create order
     const newOrder = await query(
       `INSERT INTO orders
-       (user_id, shipping_address, payment_method, total_price, shipping_price, tax_price, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (user_id, shipping_address, payment_method, total_price, shipping_price, tax_price, status, reference)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [userId, shippingAddress, paymentMethod, totalPrice, shippingPrice, taxPrice, 'pending']
+      [userId, shippingAddress, paymentMethod, totalPrice, shippingPrice, taxPrice, 'pending', reference]
     );
 
     const orderId = newOrder.rows[0].id;
@@ -330,6 +331,49 @@ export const deleteOrder = async (req, res) => {
     return res.status(500).json({
       status: 'error',
       message: 'Failed to delete order',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+// Update order status (admin only)
+export const updateOrder = async (req, res) => {
+  try {
+    const { reference } = req.body;
+
+    // Check if order exists
+    const order = await query('SELECT * FROM orders WHERE reference = $1', [reference]);
+    if (order.rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Order not found',
+      });
+    }
+
+    // Update order status
+    const updatedOrder = await query(
+      'UPDATE orders SET status = $1, updated_at = NOW() WHERE reference = $2 RETURNING *',
+      ["processing", reference]
+    );
+
+    // Get order items
+    const orderItems = await query(
+      'SELECT * FROM order_items WHERE order_id = $1',
+      [updatedOrder.rows[0].id]
+    );
+
+    return res.status(200).json({
+      status: 'success',
+      order: {
+        ...updatedOrder.rows[0],
+        items: orderItems.rows
+      }
+    });
+  } catch (error) {
+    console.error('Update order status error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to update order status',
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
