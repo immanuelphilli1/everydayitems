@@ -71,7 +71,6 @@ export default function OrdersPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'>('all');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
@@ -82,48 +81,6 @@ export default function OrdersPage() {
   }
   console.log("Orders : ",orders);
 
-  // const mockOrders: Order[] = [
-  //   {
-  //     id: 'ORD001',
-  //     created_at: '2024-03-15',
-  //     total_price: 299.99,
-  //     status: 'delivered',
-  //     items: [
-  //       {
-  //         id: 'ITEM001',
-  //         name: 'Wireless Headphones',
-  //         price: 99.99,
-  //         quantity: 2,
-  //         image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop'
-  //       },
-  //       {
-  //         id: 'ITEM002',
-  //         name: 'Smart Watch',
-  //         price: 99.99,
-  //         quantity: 1,
-  //         image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&h=500&fit=crop'
-  //       }
-  //     ],
-  //     shipping_address: '123 Main St, New York, NY 10001',
-  //     trackingNumber: '1Z999AA1234567890'
-  //   },
-  //   {
-  //     id: 'ORD002',
-  //     created_at: '2024-03-10',
-  //     total_price: 149.99,
-  //     status: 'processing',
-  //     items: [
-  //       {
-  //         id: 'ITEM003',
-  //         name: 'Bluetooth Speaker',
-  //         price: 149.99,
-  //         quantity: 1,
-  //         image: 'https://images.unsplash.com/photo-1545454675-3531b54301b2?w=500&h=500&fit=crop'
-  //       }
-  //     ],
-  //     shipping_address: '123 Main St, New York, NY 10001'
-  //   }
-  // ];
   
 
   const mockOrders: Order[] = orders;
@@ -192,8 +149,55 @@ export default function OrdersPage() {
   };
 
   // Handle payment initiation
-  const handlePayment = (orderId: string) => {
-    navigate(`/checkout?orderId=${orderId}`);
+  const handlePayment = async (orderId: string) => {
+    try {
+      // Get order details to get total price
+      const response = await fetch(`http://localhost:3001/api/orders/${orderId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Order not found');
+      }
+
+      const responseData = await response.json();
+      console.log("Full Order Response:", responseData);
+
+      // Check if we have the required data
+      if (!responseData || !responseData.order || !responseData.order.total_price) {
+        console.error("Invalid order data structure:", responseData);
+        throw new Error('Invalid order data received');
+      }
+
+      const totalPrice = responseData.order.total_price;
+      console.log("Total Price:", totalPrice);
+      
+      // Generate Paystack URL
+      const formData = new FormData();
+      formData.append('price', totalPrice.toString());
+    
+      const paystackResponse = await fetch('https://fasthosttech.com/paystack.php', {
+        method: 'POST',
+        body: formData,
+      });
+    
+      const paystackData = await paystackResponse.json();
+      console.log("Paystack Response:", paystackData);
+      
+      if (paystackData.status !== true) {
+        throw new Error('Failed to generate payment URL');
+      }
+
+      // Redirect to Paystack payment page
+      window.location.href = paystackData.data.authorization_url;
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Failed to process payment. Please try again.');
+    }
   };
 
   // Handle delete confirmation

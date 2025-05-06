@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
@@ -169,7 +169,7 @@ const OrderSummary = ({ items, totalPrice }: {
 
 // Main checkout component
 const CheckoutContent = () => {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<'address' | 'payment'>('address');
@@ -185,8 +185,6 @@ const CheckoutContent = () => {
     country: '',
     phone: '',
   });
-  const [orderComplete, setOrderComplete] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     console.log("items : ",items);
@@ -275,17 +273,21 @@ const CheckoutContent = () => {
     e.preventDefault();
     setProcessing(true);
 
-    //*****the order data */
-    const orderData = {
-      shippingAddress: address,
-      paymentMethod: 'paystack',
-      items: items,
-      totalPrice: totalPrice,
-      shippingPrice: 0,
-      taxPrice: 0,
-    }
-
     try {
+      //******generate paystack url */
+      const pay_stack_url = await generatePaystackUrl(totalPrice);
+
+      //*****the order data */
+      const orderData = {
+        shippingAddress: address,
+        paymentMethod: 'paystack',
+        items: items,
+        totalPrice: totalPrice,
+        shippingPrice: 0,
+        taxPrice: 0,
+        reference: pay_stack_url.data.reference,
+      }
+
       //******create order in the order table */
       const create_order = createOrder(orderData);
       const orderResult = await create_order;
@@ -294,79 +296,17 @@ const CheckoutContent = () => {
         throw new Error('Failed to create order');
       }
 
-      //******generate paystack url */
-      const pay_stack_url = await generatePaystackUrl(totalPrice);
       if (pay_stack_url.status !== true) {
         throw new Error('Failed to generate paystack url');
       }
-      // For now, simulate successful payment
-      console.log('Payment successful');
-      setTimeout(() => {
-        // Generate a mock order ID
-        const mockOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        // setOrderId(mockOrderId);
 
-        console.log('Order ID:', mockOrderId);
-
-        window.location.href = pay_stack_url.data.authorization_url;
-        // setOrderComplete(true);
-        // clearCart();
-      }, 2000);
+      window.location.href = pay_stack_url.data.authorization_url;
       setProcessing(false);
     } catch (error) {
       console.error('Payment error:', error);
-    } finally {
       setProcessing(false);
     }
   };
-
-  if (orderComplete && orderId) {
-    return (
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-200 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-green-600"
-            >
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-4">Order Confirmed!</h1>
-          <p className="text-slate-600 mb-8">
-            Your order has been placed and will be processed soon.
-            <br />You will receive an email confirmation shortly.
-          </p>
-          <div className="mb-8 p-4 bg-slate-50 rounded-md inline-block">
-            <p className="text-sm text-slate-500 mb-1">Order Reference</p>
-            <p className="text-lg font-medium text-slate-900">{orderId}</p>
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/">
-              <Button variant="outline">
-                Continue Shopping
-              </Button>
-            </Link>
-            {user && (
-              <Link to="/account/orders">
-                <Button variant="primary">
-                  View Order Status
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-24">

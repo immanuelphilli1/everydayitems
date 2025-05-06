@@ -3,50 +3,13 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Receipt from '@/components/Receipt';
 
-// Mock data for testing
-const mockOrder = {
-  id: 1,
-  order_number: "ORD-2024-001",
-  user_id: 1,
-  total_amount: 500.00,
-  status: "paid",
-  created_at: new Date().toISOString(),
-  items: [
-    {
-      id: 1,
-      product_id: 1,
-      product_name: "Test Product 1",
-      quantity: 2,
-      price: 100.00,
-      total: 200.00
-    },
-    {
-      id: 2,
-      product_id: 2,
-      product_name: "Test Product 2",
-      quantity: 1,
-      price: 300.00,
-      total: 300.00
-    }
-  ],
-  shipping_address: {
-    first_name: "John",
-    last_name: "Doe",
-    address1: "123 Test Street",
-    address2: "Apt 4B",
-    city: "Accra",
-    state: "Greater Accra",
-    postal_code: "00233",
-    country: "Ghana",
-    phone: "0241234567"
-  }
-};
-
 interface Order {
   id: number;
   order_number: string;
   user_id: number;
   total_amount: number;
+  payment_method: string;
+  total_price: number;
   status: string;
   created_at: string;
   items: any[];
@@ -63,18 +26,37 @@ export default function PaymentStatus() {
   useEffect(() => {
     // If no reference is provided, add a mock reference
     if (!reference) {
-      setSearchParams({ reference: 'mock_ref_123456' });
+      setSearchParams({ reference: 'mock-reference' });
       return;
     }
 
-    // Simulate API call with mock data
     const verifyPayment = async () => {
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Use mock data instead of API call
-        setOrder(mockOrder);
+        // Update payment status
+        const response = await fetch(`http://localhost:3001/api/orders/reference`, {
+          method: 'post',
+          credentials: 'include',
+          body: JSON.stringify({ "reference": reference }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to verify payment');
+        }
+
+        const data = await response.json();
+        console.log("Payment verification response:", data);
+
+        // Check the structure of the response
+        if (data.status === 'success') {
+          console.log("Setting order data:", data.order);
+          setOrder(data.order);
+        } else {
+          console.error("Invalid response structure:", data);
+          throw new Error('Invalid order data received');
+        }
       } catch (error) {
         console.error('Error verifying payment:', error);
         toast.error('Failed to verify payment');
