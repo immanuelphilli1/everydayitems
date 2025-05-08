@@ -145,6 +145,72 @@ export const register = async (req, res) => {
   }
 };
 
+//guest register
+export const registerGuest = async (body, res) => {
+  try {
+    const { name, phone, email, address, password } = body;
+
+    console.log("field : ",password)
+
+    // Validate input
+    if (!name || !phone || !email || !address || !password) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Please provide all required fields',
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User with this email already exists',
+      });
+    }
+
+    // Hash the password
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = await query(
+      'INSERT INTO users (name, phone_number, email, address, password, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, phone_number, email, address, role',
+      [name, phone, email.toLowerCase(), address, hashedPassword, 'admin']
+    );
+
+    // Generate tokens
+    const accessToken = generateAccessToken(newUser.rows[0].id);
+    const refreshToken = generateRefreshToken(newUser.rows[0].id);
+
+    // Store refresh token hash in database
+    await query(
+      'INSERT INTO refresh_tokens (user_id, token_hash) VALUES ($1, $2)',
+      [newUser.rows[0].id, await bcrypt.hash(refreshToken, 10)]
+    );
+
+    // Set token cookies
+    setTokenCookies(res, accessToken, refreshToken);
+
+    // Return user data
+    return {
+      user: {
+        id: newUser.rows[0].id,
+        name: newUser.rows[0].name,
+        email: newUser.rows[0].email,
+        role: newUser.rows[0].role,
+      },
+    };
+  } catch (error) {
+    console.error('Registration error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Registration failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
 // Login user
 export const login = async (req, res) => {
   try {

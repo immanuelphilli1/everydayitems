@@ -1,17 +1,37 @@
+import { randomUUID } from 'crypto';
 import { query } from '../config/db.js';
+import { registerGuest } from './authController.js';
 
 // Create a new order
 export const createOrder = async (req, res) => {
   console.log("Orders to create : ", req.body)
   try {
+    let userId;
+
     if (!req.user) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Not authenticated',
-      });
+      //******create a guest user account */
+      const randomNumber = Math.floor(Math.random() * 10000);
+      const body = {
+        name: "Guest",
+        phone: "1234567890",
+        email: `${randomNumber}@guest.com`,
+        address: "123 Main St, Anytown, USA",
+        password: "guest123"
+      };
+     const guestUser = await registerGuest(body, res);
+
+       userId = guestUser.user.id;
+
+      // return res.status(401).json({
+      //   status: 'error',
+      //   message: 'Not authenticated',
+      // });
     }
 
-    const userId = req.user.id;
+    //****random uuid for user id */
+    
+
+    
     const {
       shippingAddress,
       paymentMethod,
@@ -336,7 +356,7 @@ export const deleteOrder = async (req, res) => {
   }
 };
 
-// Update order status (admin only)
+// Update order status (users only)
 export const updateOrder = async (req, res) => {
   try {
     const { reference } = req.body;
@@ -361,6 +381,12 @@ export const updateOrder = async (req, res) => {
       'SELECT * FROM order_items WHERE order_id = $1',
       [updatedOrder.rows[0].id]
     );
+
+    //****check if user is a guest and delete the user */
+    // const fetchUser = await query('SELECT email FROM users WHERE id = $1', [order.rows[0].user_id]);
+    // if (fetchUser.rows[0].email.includes("@guest.com")) {
+    //   await query('DELETE FROM users WHERE id = $1', [order.rows[0].user_id]);
+    // }
 
     return res.status(200).json({
       status: 'success',
